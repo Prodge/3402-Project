@@ -15,17 +15,19 @@ find_all_neighbourhood_groups(column):
   Will need sub-functions
 
 unique_blocks()
+  //not sure if we need it
 
 build a struct for holding a block
   signature : int
   row_ids: list of ints // length(4)
-  column: length
+  column: column number
 
 is_collision(block1, block2):
   return true if the blocks collide // signature is the same
   // Collision occurs when they are in DIFFERENT columns
   // this maybe needs to return the column ids as a list
 
+Read files into arrays
 
 
 
