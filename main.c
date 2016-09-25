@@ -27,6 +27,15 @@ int** Make2DIntArray(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
+void printArray(int **arr, int size, int elements){
+    for (int i=0;i <size;i++) {
+        for (int j=0; j< elements; j++){
+            printf("%d ", arr[i][j]);
+        }
+        printf("\n");
+    }
+}
+
 bool check_in_array(int **rows, int row_size, int row_e_size, int set1[], int set2[], int set_size){
     for (int a=0; a<row_size; a++){
         int c = 0;
@@ -51,6 +60,13 @@ bool check_in_array(int **rows, int row_size, int row_e_size, int set1[], int se
     return false;
 }
 
+int ** insertEndToArray(int ** arr, int size, int elements){
+    for (int i=0; i<elements; i++){
+        arr[size][i] = -1;
+    }
+    return arr;
+}
+
 int ** find_all_neighbourhood_groups(float column[], int size, int max_rows){
     int** pairs = Make2DIntArray(max_rows, 2);
     int c = 0;
@@ -65,15 +81,10 @@ int ** find_all_neighbourhood_groups(float column[], int size, int max_rows){
             }
         }
     }
-    pairs[c][0] = -1;
-    pairs[c][1] = -1;
-    for (int i=0;i <c;i++) {
-        printf("%d %d\n", pairs[i][0], pairs[i][1]);
-    }
-    return pairs;
+    return insertEndToArray(pairs, c, 2);
 }
 
-void combine_neighbourhood_groups(int **pairs, int max_rows) {
+int ** combine_neighbourhood_groups(int **pairs, int max_rows) {
     int** groups = Make2DIntArray(max_rows, 4);
     int c = 0;
     for (int a=0; a<max_rows; a=a+1){
@@ -89,16 +100,13 @@ void combine_neighbourhood_groups(int **pairs, int max_rows) {
             }
         }
     }
-    printf("%d\n", c);
-    for (int i=0;i <c;i++) {
-        printf("%d %d %d %d\n", groups[i][0], groups[i][1], groups[i][2], groups[i][3]);
-    }
+    return insertEndToArray(groups, c, 4);
 }
 
 void create_all_blocks(float column[], int column_size, double keys[], int keys_size){
     int max_rows = factorial(column_size)/factorial(column_size-2);
-    int ** abc = find_all_neighbourhood_groups(column, column_size, max_rows);
-    combine_neighbourhood_groups(abc, max_rows);
+    int ** pairs = find_all_neighbourhood_groups(column, column_size, max_rows);
+    int ** groups = combine_neighbourhood_groups(pairs, max_rows);
 }
 
 int main() {
