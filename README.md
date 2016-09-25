@@ -28,7 +28,11 @@ is_collision(block1, block2):
   // this maybe needs to return the column ids as a list
 
 Read files into arrays
-
-
-
 ```
+
+### Instructions
+
+To run first run the following make target `make main`
+Then run the program by `./main`
+
+To clean the project run `make clean`
