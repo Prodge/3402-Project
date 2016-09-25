@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "helpers.h"
 
 typedef struct{
     double signature;
@@ -10,61 +11,10 @@ typedef struct{
 
 const float DIA = 0.000001;
 
-int factorial(int a) {
-    int fac = 1;
-    for (int x=1; x <= a; x++){
-        fac *= x;
+void printBlock(Block block_set[], int c){
+    for (int j=1; j<c; j++){
+        printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
     }
-    return fac;
-}
-
-int** Make2DIntArray(int arraySizeX, int arraySizeY) {
-    int** theArray;
-    theArray = (int**) malloc(arraySizeX*sizeof(int*));
-    for (int i = 0; i < arraySizeX; i++){
-        theArray[i] = (int*) malloc(arraySizeY*sizeof(int));
-    }
-    return theArray;
-}
-
-void printArray(int **arr, int size, int elements){
-    for (int i=0;i <size;i++) {
-        for (int j=0; j< elements; j++){
-            printf("%d ", arr[i][j]);
-        }
-        printf("\n");
-    }
-}
-
-bool check_in_array(int **rows, int row_size, int row_e_size, int set1[], int set2[], int set_size){
-    for (int a=0; a<row_size; a++){
-        int c = 0;
-        for (int b=0; b<row_e_size; b++){
-            if (set_size == 1){
-                if (rows[a][b] == set1[0] || rows[a][b] == set2[0]){
-                    c++;
-                }
-            }else{
-                if (rows[a][b] == set1[0] || rows[a][b] == set1[1] || rows[a][b] == set2[0] || rows[a][b] == set2[1]){
-                    c++;
-                }
-            }
-        }
-        if (c == 4 && set_size != 1){
-            return true;
-        }
-        if (c == 2 && set_size == 1){
-            return true;
-        }
-    }
-    return false;
-}
-
-int ** insertEndToArray(int ** arr, int size, int elements){
-    for (int i=0; i<elements; i++){
-        arr[size][i] = -1;
-    }
-    return arr;
 }
 
 int ** find_all_neighbourhood_groups(float column[], int size, int max_rows){
@@ -101,12 +51,6 @@ int ** combine_neighbourhood_groups(int **pairs, int max_rows) {
         }
     }
     return insertEndToArray(groups, c, 4);
-}
-
-void printBlock(Block block_set[], int c){
-    for (int j=1; j<c; j++){
-        printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
-    }
 }
 
 void create_all_blocks(float column[], int column_size, double keys[], int keys_size){
