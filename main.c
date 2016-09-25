@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct Block {
-    int signature;
+typedef struct{
+    double signature;
     int row_ids[4];
     int column_number;
-};
+} Block;
 
 const float DIA = 0.000001;
 
@@ -103,10 +103,29 @@ int ** combine_neighbourhood_groups(int **pairs, int max_rows) {
     return insertEndToArray(groups, c, 4);
 }
 
+void printBlock(Block block_set[], int c){
+    for (int j=1; j<c; j++){
+        printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
+    }
+}
+
 void create_all_blocks(float column[], int column_size, double keys[], int keys_size){
     int max_rows = factorial(column_size)/factorial(column_size-2);
     int ** pairs = find_all_neighbourhood_groups(column, column_size, max_rows);
     int ** groups = combine_neighbourhood_groups(pairs, max_rows);
+    Block block_set[max_rows];
+    int c = 0;
+    for (int i=0; i<max_rows; i++){
+        if (groups[i][0] == -1 && groups[i][1] == -1 && groups[i][2] == -1 && groups[i][3] == -1) break;
+        block_set[i].signature = keys[groups[i][0]] + keys[groups[i][1]] + keys[groups[i][2]] + keys[groups[i][3]];
+        block_set[i].row_ids[0] = groups[i][0];
+        block_set[i].row_ids[1] = groups[i][1];
+        block_set[i].row_ids[2] = groups[i][2];
+        block_set[i].row_ids[3] = groups[i][3];
+        block_set[i].column_number = 1;
+        c++;
+    }
+    printBlock(block_set, c);
 }
 
 int main() {
