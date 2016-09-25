@@ -11,37 +11,37 @@ typedef struct{
 
 const float DIA = 0.000001;
 
-void printBlock(Block block_set[], int c){
+void print_block(Block block_set[], int c){
     for (int j=1; j<c; j++){
         printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
     }
 }
 
-int ** find_all_neighbourhood_groups(float column[], int size, int max_rows){
-    int** pairs = Make2DIntArray(max_rows, 2);
+int ** get_neighbourhood_pairs_for_column(float column[], int size, int max_rows){
+    int** pairs = make_2d_int_array(max_rows, 2);
     int c = 0;
     for (int a=0; a<size; a=a+1){
         for (int b=0; b<size; b=b+1){
             int ab[1] = {a};
             int ba[1] = {b};
-            if (abs(column[a] - column[b]) < DIA && a != b && !check_in_array(pairs, c, 2, ab, ba, 1)){
+            if (abs(column[a] - column[b]) < DIA && a != b && !item_in_array(pairs, c, 2, ab, ba, 1)){
                 pairs[c][0] = a;
                 pairs[c][1] = b;
                 c = c + 1;
             }
         }
     }
-    return insertEndToArray(pairs, c, 2);
+    return add_end_to_array_and_return_array(pairs, c, 2);
 }
 
-int ** combine_neighbourhood_groups(int **pairs, int max_rows) {
-    int** groups = Make2DIntArray(max_rows, 4);
+int ** get_neighbourhood_groups_for_column(int **pairs, int max_rows) {
+    int** groups = make_2d_int_array(max_rows, 4);
     int c = 0;
     for (int a=0; a<max_rows; a=a+1){
         if (pairs[a][0] == -1 && pairs[a][1] == -1) break;
         for (int b=0; b<max_rows; b=b+1){
             if (pairs[b][0] == -1 && pairs[b][1] == -1) break;
-            if (a!=b && !check_in_array(groups, c, 4, pairs[a], pairs[b], 2) && pairs[a][0] != pairs[b][0] && pairs[a][1] != pairs[b][1] && pairs[a][0] != pairs[b][1] && pairs[a][1] != pairs[b][0]){
+            if (a!=b && !item_in_array(groups, c, 4, pairs[a], pairs[b], 2) && pairs[a][0] != pairs[b][0] && pairs[a][1] != pairs[b][1] && pairs[a][0] != pairs[b][1] && pairs[a][1] != pairs[b][0]){
                 groups[c][0] = pairs[a][0];
                 groups[c][1] = pairs[a][1];
                 groups[c][2] = pairs[b][0];
@@ -50,13 +50,13 @@ int ** combine_neighbourhood_groups(int **pairs, int max_rows) {
             }
         }
     }
-    return insertEndToArray(groups, c, 4);
+    return add_end_to_array_and_return_array(groups, c, 4);
 }
 
 void create_all_blocks(float column[], int column_size, double keys[], int keys_size){
     int max_rows = factorial(column_size)/factorial(column_size-2);
-    int ** pairs = find_all_neighbourhood_groups(column, column_size, max_rows);
-    int ** groups = combine_neighbourhood_groups(pairs, max_rows);
+    int ** pairs = get_neighbourhood_pairs_for_column(column, column_size, max_rows);
+    int ** groups = get_neighbourhood_groups_for_column(pairs, max_rows);
     Block block_set[max_rows];
     int c = 0;
     for (int i=0; i<max_rows; i++){
@@ -69,7 +69,7 @@ void create_all_blocks(float column[], int column_size, double keys[], int keys_
         block_set[i].column_number = 1;
         c++;
     }
-    printBlock(block_set, c);
+    print_block(block_set, c);
 }
 
 int main() {

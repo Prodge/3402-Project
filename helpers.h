@@ -10,7 +10,7 @@ int factorial(int a) {
     return fac;
 }
 
-int** Make2DIntArray(int arraySizeX, int arraySizeY) {
+int** make_2d_int_array(int arraySizeX, int arraySizeY) {
     int** theArray;
     theArray = (int**) malloc(arraySizeX*sizeof(int*));
     for (int i = 0; i < arraySizeX; i++){
@@ -19,7 +19,7 @@ int** Make2DIntArray(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
-bool check_in_array(int **rows, int row_size, int row_e_size, int set1[], int set2[], int set_size){
+bool item_in_array(int **rows, int row_size, int row_e_size, int set1[], int set2[], int set_size){
     for (int a=0; a<row_size; a++){
         int c = 0;
         for (int b=0; b<row_e_size; b++){
@@ -43,14 +43,14 @@ bool check_in_array(int **rows, int row_size, int row_e_size, int set1[], int se
     return false;
 }
 
-int ** insertEndToArray(int ** arr, int size, int elements){
+int ** add_end_to_array_and_return_array(int ** arr, int size, int elements){
     for (int i=0; i<elements; i++){
         arr[size][i] = -1;
     }
     return arr;
 }
 
-void printArray(int **arr, int size, int elements){
+void print_array(int **arr, int size, int elements){
     for (int i=0;i <size;i++) {
         for (int j=0; j< elements; j++){
             printf("%d ", arr[i][j]);
