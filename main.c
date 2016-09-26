@@ -14,6 +14,11 @@ typedef struct{
     int ** array;
 } IntArray;
 
+typedef struct{
+    int length;
+    Block * array;
+} BlockArray;
+
 const float DIA = 0.000001;
 
 void print_block(Block block_set[], int c){
@@ -69,24 +74,35 @@ Block create_block(double signature, int * row_ids, int column_number){
     return block;
 }
 
-void create_all_blocks(float column[], int column_size, double keys[]){
+Block* make_block_array(int arraySizeX) {
+    Block* theArray;
+    theArray = (Block*) malloc(arraySizeX*sizeof(Block));
+    return theArray;
+}
+
+BlockArray create_blocks_for_column(float column[], int column_size, double keys[], int column_number){
     int max_rows = factorial(column_size)/factorial(column_size-2);
-    IntArray pairs = get_neighbourhood_pairs_for_column(column, column_size, max_rows);
-    IntArray groups = get_neighbourhood_groups_for_column(pairs, max_rows);
-    Block block_set[groups.length];
-    for (int i=0; i<groups.length; i++){
-        block_set[i] = create_block(
+    IntArray groups = get_neighbourhood_groups_for_column(
+        get_neighbourhood_pairs_for_column(column, column_size, max_rows),
+        max_rows
+    );
+    BlockArray column_blocks;
+    column_blocks.length = groups.length;
+    column_blocks.array = make_block_array(groups.length);
+    for (int i=0; i<column_blocks.length; i++){
+        column_blocks.array[i] = create_block(
             keys[groups.array[i][0]] + keys[groups.array[i][1]] + keys[groups.array[i][2]] + keys[groups.array[i][3]],
             groups.array[i],
-            1
+            column_number
         );
     }
-    print_block(block_set, groups.length);
+    return column_blocks;
 }
 
 int main() {
     float column[] = {0.047039, 0.037743, 10.051712, 0.03644, 0.025803,0.024889,0.047446,0.036642};
     double keys[] = {12135267736472, 99115488405427, 30408863181157, 27151991364761, 25494155035412, 91903481209489, 28987097620742, 88358601329494};
-    create_all_blocks(column, 8, keys);
+    BlockArray blck = create_blocks_for_column(column, 8, keys, 1);
+    print_block(blck.array, blck.length);
     return 0;
 }
