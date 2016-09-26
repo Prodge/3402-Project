@@ -58,18 +58,28 @@ IntArray get_neighbourhood_groups_for_column(IntArray pairs, int max_rows) {
     return groups;
 }
 
-void create_all_blocks(float column[], int column_size, double keys[], int keys_size){
+Block create_block(double signature, int * row_ids, int column_number){
+    Block block;
+    block.signature = signature;
+    block.row_ids[0] = row_ids[0];
+    block.row_ids[1] = row_ids[1];
+    block.row_ids[2] = row_ids[2];
+    block.row_ids[3] = row_ids[3];
+    block.column_number = column_number;
+    return block;
+}
+
+void create_all_blocks(float column[], int column_size, double keys[]){
     int max_rows = factorial(column_size)/factorial(column_size-2);
     IntArray pairs = get_neighbourhood_pairs_for_column(column, column_size, max_rows);
     IntArray groups = get_neighbourhood_groups_for_column(pairs, max_rows);
     Block block_set[groups.length];
     for (int i=0; i<groups.length; i++){
-        block_set[i].signature = keys[groups.array[i][0]] + keys[groups.array[i][1]] + keys[groups.array[i][2]] + keys[groups.array[i][3]];
-        block_set[i].row_ids[0] = groups.array[i][0];
-        block_set[i].row_ids[1] = groups.array[i][1];
-        block_set[i].row_ids[2] = groups.array[i][2];
-        block_set[i].row_ids[3] = groups.array[i][3];
-        block_set[i].column_number = 1;
+        block_set[i] = create_block(
+            keys[groups.array[i][0]] + keys[groups.array[i][1]] + keys[groups.array[i][2]] + keys[groups.array[i][3]],
+            groups.array[i],
+            1
+        );
     }
     print_block(block_set, groups.length);
 }
@@ -77,6 +87,6 @@ void create_all_blocks(float column[], int column_size, double keys[], int keys_
 int main() {
     float column[] = {0.047039, 0.037743, 10.051712, 0.03644, 0.025803,0.024889,0.047446,0.036642};
     double keys[] = {12135267736472, 99115488405427, 30408863181157, 27151991364761, 25494155035412, 91903481209489, 28987097620742, 88358601329494};
-    create_all_blocks(column, 8, keys, 8);
+    create_all_blocks(column, 8, keys);
     return 0;
 }
