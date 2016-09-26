@@ -1,4 +1,3 @@
-# Generic C makefile by Prodge
 # Compiles source files into obj/ and links to ./main
 
 COMPILER = cc
