@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
+#include "header.h"
 
 int factorial(int a) {
     int fac = 1;
