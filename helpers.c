@@ -104,6 +104,7 @@ BlockArray unique_blocks(BlockArray blocks){
             out.length ++;
             Block* tmp = realloc(out.array, out.length * sizeof(Block));
             if(!tmp){
+                fprintf(stderr, "Out of memory.");
                 exit(1);
             }
             out.array = tmp;
@@ -111,4 +112,58 @@ BlockArray unique_blocks(BlockArray blocks){
         }
     }
     return out;
+}
+
+Collision get_colliding_blocks(Block block, BlockArray blocks){
+    Collision collision;
+    collision.length = 1;
+    collision.signature = block.signature;
+    collision.columns = (int*) malloc(sizeof(int));
+    collision.columns[0] = block.column_number;
+
+    for(int i=0; i<blocks.length; i++){
+        if(block.signature == blocks.array[i].signature && block.column_number != blocks.array[i].column_number){
+            collision.length ++;
+            int* tmp = realloc(collision.columns, collision.length * sizeof(int));
+            if(!tmp){
+                fprintf(stderr, "Out of memory.");
+                exit(ENOMEM);
+            }
+            collision.columns = tmp;
+            collision.columns[collision.length-1] = blocks.array[i].column_number;
+        }
+    }
+    return collision;
+}
+
+bool is_new_collision(Collision collision, CollisionArray collisions){
+    for(int i=0; i<collisions.length; i++){
+        if (collision.signature == collisions.array[i].signature){
+            return false;
+        }
+    }
+    return true;
+}
+
+/*returns a unique CollisionArray of collisions*/
+CollisionArray get_collisions(BlockArray blocks){
+    CollisionArray collisions;
+
+    collisions.length=0;
+    collisions.array = (Collision*) malloc(collisions.length * sizeof(Collision));
+
+    for(int i=0; i<blocks.length; i++){
+        Collision collision = get_colliding_blocks(blocks.array[i], blocks);
+        if (collision.length > 1 && is_new_collision(collision, collisions)){
+            collisions.length ++;
+            Collision* tmp = realloc(collisions.array, collisions.length * sizeof(Collision));
+            if(!tmp){
+                fprintf(stderr, "Out of memory.");
+                exit(ENOMEM);
+            }
+            collisions.array = tmp;
+            collisions.array[collisions.length-1] = collision;
+        }
+    }
+    return collisions;
 }

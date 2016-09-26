@@ -12,6 +12,16 @@ void print_block(Block block_set[], int c){
     }
 }
 
+void print_collisions(CollisionArray collisions){
+    for (int j=0; j<collisions.length; j++){
+        printf("Collision: signature: %lf, columns: (", collisions.array[j].signature);
+        for (int i=0; i<collisions.array[j].length; i++){
+            printf("%d, ", collisions.array[i].columns[i]);
+        }
+        printf(")\n");
+    }
+}
+
 IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows){
     IntArray pairs;
     pairs.length = 0;
@@ -121,5 +131,7 @@ int main(int argc, char* argv[]) {
     debug("Print blocks");
     print_block(main_block_set.array, main_block_set.length);
     debug("Finished");
+    CollisionArray collisions = get_collisions(main_block_set);
+    print_collisions(collisions);
     return 0;
 }
