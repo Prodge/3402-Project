@@ -1,24 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <errno.h>
-#include "helpers.h"
-
-typedef struct{
-    double signature;
-    int row_ids[4];
-    int column_number;
-} Block;
-
-typedef struct{
-    int length;
-    int ** array;
-} IntArray;
-
-typedef struct{
-    int length;
-    Block * array;
-} BlockArray;
+#include "header.h"
 
 const float DIA = 0.000001;
 
