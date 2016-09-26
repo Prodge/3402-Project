@@ -75,3 +75,40 @@ void print_array(int **arr, int size, int elements){
         printf("\n");
     }
 }
+
+bool is_block_in_block_array(Block block, BlockArray blocks){
+    for(int i=0; i<blocks.length; i++){
+        if( block.signature == blocks.array[i].signature &&
+            block.column_number == blocks.array[i].column_number &&
+            block.row_ids[0] == blocks.array[i].row_ids[0] &&
+            block.row_ids[1] == blocks.array[i].row_ids[1] &&
+            block.row_ids[2] == blocks.array[i].row_ids[2] &&
+            block.row_ids[3] == blocks.array[i].row_ids[3]){
+                return true;
+        }
+    }
+    return false;
+}
+
+BlockArray unique_blocks(BlockArray blocks){
+    BlockArray out;
+
+    // Add first block
+    out.length = 1;
+    out.array = make_block_array(1);
+    out.array[0] = blocks.array[0];
+
+    // Add other blocks if they don't already exist
+    for(int i=1; i<blocks.length; i++){
+        if(! is_block_in_block_array(blocks.array[i], out)){
+            out.length ++;
+            Block* tmp = realloc(out.array, out.length * sizeof(Block));
+            if(!tmp){
+                exit(1);
+            }
+            out.array = tmp;
+            out.array[out.length-1] = blocks.array[i];
+        }
+    }
+    return out;
+}

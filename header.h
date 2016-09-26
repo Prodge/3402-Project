@@ -44,6 +44,10 @@ extern bool array_has_repeated_elements(int arr[], int size);
 
 extern void print_array(int **arr, int size, int elements);
 
+extern bool is_block_in_block_array(Block block, BlockArray blocks);
+
+extern BlockArray unique_blocks(BlockArray blocks);
+
 
 /*
  *  main.c
