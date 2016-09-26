@@ -60,13 +60,6 @@ bool array_has_repeated_elements(int arr[], int size){
     return false;
 }
 
-int ** add_end_to_array_and_return_array(int ** arr, int size, int elements){
-    for (int i=0; i<elements; i++){
-        arr[size][i] = -1;
-    }
-    return arr;
-}
-
 void print_array(int **arr, int size, int elements){
     for (int i=0;i <size;i++) {
         for (int j=0; j< elements; j++){
