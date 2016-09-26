@@ -18,6 +18,12 @@ double** make_2d_double_array(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
+Block* make_block_array(int arraySizeX) {
+    Block* theArray;
+    theArray = (Block*) malloc(arraySizeX*sizeof(Block));
+    return theArray;
+}
+
 int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size){
     if (current_length != 0 && current_length % base_allocation == 0){
         int** new_array;

@@ -49,6 +49,8 @@ extern int** make_2d_int_array(int arraySizeX, int arraySizeY);
 
 extern double** make_2d_double_array(int arraySizeX, int arraySizeY);
 
+extern Block* make_block_array(int arraySizeX);
+
 extern int* sort_array(int arr[], int size);
 
 extern bool already_processed(int *org, int *set1);
@@ -81,11 +83,9 @@ extern IntArray get_neighbourhood_groups_for_column(IntArray pairs, double colum
 
 extern Block create_block(double signature, int * row_ids, int column_number);
 
-extern Block* make_block_array(int arraySizeX);
-
 extern BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number);
 
-extern BlockArray merge_block_arrays(BlockArray block_array_1, BlockArray block_array_2);
+extern BlockArray merge_block_array(BlockArray *block_array, int column_size);
 
 
 /*
