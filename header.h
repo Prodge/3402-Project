@@ -19,13 +19,24 @@ typedef struct{
 } Block;
 
 typedef struct{
+    double signature;
     int length;
-    int ** array;
+    int* columns;
+} Collision;
+
+typedef struct{
+    int length;
+    Collision* array;
+} CollisionArray;
+
+typedef struct{
+    int length;
+    int** array;
 } IntArray;
 
 typedef struct{
     int length;
-    Block * array;
+    Block* array;
 } BlockArray;
 
 
@@ -51,6 +62,11 @@ extern bool is_block_in_block_array(Block block, BlockArray blocks);
 
 extern BlockArray unique_blocks(BlockArray blocks);
 
+Collision get_colliding_blocks(Block block, BlockArray blocks);
+
+bool is_new_collision(Collision collision, CollisionArray collisions);
+
+CollisionArray get_collisions(BlockArray blocks);
 
 /*
  *  main.c

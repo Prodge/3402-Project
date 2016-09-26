@@ -16,10 +16,21 @@ void print_block(Block block_set[], int c){
 int** realloc_2d_int_array(int old_size, int ** old_arr, int arraySizeX, int arraySizeY) {
     int** theArray;
     theArray = (int**) realloc(old_arr, arraySizeX*sizeof(int*));
+    //if (arraySizeY == 2) printf("%d\n", arraySizeX);
     for (int i = old_size; i < arraySizeX; i++){
         theArray[i] = (int*) malloc(arraySizeY*sizeof(int));
     }
     return theArray;
+}
+
+void print_collisions(CollisionArray collisions){
+    for (int j=0; j<collisions.length; j++){
+        printf("Collision: signature: %lf, columns: (", collisions.array[j].signature);
+        for (int i=0; i<collisions.array[j].length; i++){
+            printf("%d, ", collisions.array[i].columns[i]);
+        }
+        printf(")\n");
+    }
 }
 
 IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows){
@@ -30,7 +41,7 @@ IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column,
         int wimo = 0;
         for (int row=head+1; row<size_of_column; row++){
             if (fabs(column[head] - column[row]) < DIA){
-                if (pairs.length % BASE_ALLOC_PAIRS == 0){
+                if (pairs.length != 0 && pairs.length % BASE_ALLOC_PAIRS == 0){
                     int new_len = pairs.length + BASE_ALLOC_PAIRS;
                     int ** tmparr = realloc_2d_int_array(pairs.length, pairs.array, new_len, 2);
                     pairs.array = tmparr;
@@ -41,9 +52,9 @@ IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column,
                 wimo++;
             }
         }
-        printf("created %d pairs for row %d\n", wimo, head);
+        //printf("created %d pairs for row %d\n", wimo, head);
     }
-    printf("%d\n", pairs.length);
+    //printf("pairs has memory of %d\n", abcde);
     return pairs;
 }
 
@@ -95,9 +106,10 @@ IntArray get_neighbourhood_groups_for_column(IntArray pairs, double column[], in
                 wimo++;
             }
         }
-        printf("created %d groups for pair %d\n", wimo, head);
+        //printf("created %d groups for pair %d\n", wimo, head);
     }
-    for (int i=0; i<((pairs.length/BASE_ALLOC_PAIRS)+1)*BASE_ALLOC_PAIRS; i++){
+    //printf("finished creating blocks %d %d\n", pairs.length, (((pairs.length-1)/BASE_ALLOC_PAIRS)+1)*BASE_ALLOC_PAIRS);
+    for (int i=0; i<(((pairs.length-1)/BASE_ALLOC_PAIRS))*BASE_ALLOC_PAIRS; i++){
         free(pairs.array[i]);
     }
     free(pairs.array);
@@ -139,7 +151,7 @@ BlockArray create_blocks_for_column(double column[], int column_size, double key
             column_number
         );
     }
-    for (int i=0; i<((groups.length/BASE_ALLOC_PAIRS)+1)*BASE_ALLOC_PAIRS; i++){
+    for (int i=0; i<(((groups.length-1)/BASE_ALLOC_PAIRS)+1)*BASE_ALLOC_PAIRS; i++){
         free(groups.array[i]);
     }
     free(groups.array);
@@ -177,15 +189,18 @@ int main(int argc, char* argv[]) {
     BlockArray main_block_set;
     main_block_set.length = 0;
     main_block_set.array = make_block_array(0);
-    for (int i=0; i<100; i++){
+    for (int i=0; i<499; i++){
         //debug("in loop");
-        printf("in column %d\n", i);
         BlockArray column_blocks = create_blocks_for_column(matrix[i], rows, keys, i);
+        printf("Column %d has %d blocks\n", i, column_blocks.length);
         main_block_set = merge_block_arrays(main_block_set, column_blocks);
     }
     debug("Print blocks");
     print_block(main_block_set.array, main_block_set.length);
     printf("%d\n", main_block_set.length);
     debug("Finished");
+    CollisionArray collisions = get_collisions(main_block_set);
+    print_collisions(collisions);
+    printf("%d\n", main_block_set.length);
     return 0;
 }
