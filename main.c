@@ -17,40 +17,40 @@ void print_block(Block block_set[], int c){
     }
 }
 
-int ** get_neighbourhood_pairs_for_column(float column[], int size, int max_rows){
+int ** get_neighbourhood_pairs_for_column(float column[], int size_of_column, int max_rows){
     int** pairs = make_2d_int_array(max_rows, 2);
-    int c = 0;
-    for (int a=0; a<size; a=a+1){
-        for (int b=0; b<size; b=b+1){
-            int ab[2] = {a, b};
-            if (abs(column[a] - column[b]) < DIA && a != b && !array_has_repeated_elements(ab, 2) && !item_in_array(pairs, c, 2, ab) ){
-                pairs[c][0] = a;
-                pairs[c][1] = b;
-                c = c + 1;
+    int size_of_pairs = 0;
+    for (int head=0; head<size_of_column; head++){
+        for (int row=0; row<size_of_column; row++){
+            int pair[2] = {head, row};
+            if (head != row && abs(column[head] - column[row]) < DIA && !item_in_array(pairs, size_of_pairs, 2, pair)){
+                pairs[size_of_pairs][0] = head;
+                pairs[size_of_pairs][1] = row;
+                size_of_pairs++;
             }
         }
     }
-    return add_end_to_array_and_return_array(pairs, c, 2);
+    return add_end_to_array_and_return_array(pairs, size_of_pairs, 2);
 }
 
 int ** get_neighbourhood_groups_for_column(int **pairs, int max_rows) {
     int** groups = make_2d_int_array(max_rows, 4);
-    int c = 0;
-    for (int a=0; a<max_rows; a=a+1){
-        if (pairs[a][0] == -1 && pairs[a][1] == -1) break;
-        for (int b=0; b<max_rows; b=b+1){
-            if (pairs[b][0] == -1 && pairs[b][1] == -1) break;
-            int sets[4] = {pairs[a][0], pairs[a][1], pairs[b][0], pairs[b][1]};
-            if (a!=b && !array_has_repeated_elements(sets, 4) && !item_in_array(groups, c, 4, sets)){
-                groups[c][0] = pairs[a][0];
-                groups[c][1] = pairs[a][1];
-                groups[c][2] = pairs[b][0];
-                groups[c][3] = pairs[b][1];
-                c = c + 1;
+    int size_of_groups = 0;
+    for (int head=0; head<max_rows; head++){
+        if (pairs[head][0] == -1 && pairs[head][1] == -1) break; // If end of array exit
+        for (int row=0; row<max_rows; row++){
+            if (pairs[row][0] == -1 && pairs[row][1] == -1) break; // If end of array exit
+            int group[4] = {pairs[head][0], pairs[head][1], pairs[row][0], pairs[row][1]};
+            if (head != row && !array_has_repeated_elements(group, 4) && !item_in_array(groups, size_of_groups, 4, group)){
+                groups[size_of_groups][0] = group[0];
+                groups[size_of_groups][1] = group[1];
+                groups[size_of_groups][2] = group[2];
+                groups[size_of_groups][3] = group[3];
+                size_of_groups++;
             }
         }
     }
-    return add_end_to_array_and_return_array(groups, c, 4);
+    return add_end_to_array_and_return_array(groups, size_of_groups, 4);
 }
 
 void create_all_blocks(float column[], int column_size, double keys[], int keys_size){
