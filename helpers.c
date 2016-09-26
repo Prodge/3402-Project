@@ -26,8 +26,7 @@ double** make_2d_double_array(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
-int ** sort_array(int arr[], int size){
-    int** theArray = make_2d_int_array(size, 1);
+int * sort_array(int * arr, int size){
     for (int i = 0; i < size; ++i){
         for (int j = i + 1; j < size; ++j){
             if (arr[i] > arr[j]){
@@ -37,19 +36,16 @@ int ** sort_array(int arr[], int size){
             }
         }
     }
-    for (int i=0; i<size; i++){
-        theArray[i] = &arr[i];
-    }
-    return theArray;
+    return arr;
 }
 
 bool item_in_array(int **rows, int row_size, int row_e_size, int sets[]){
-    int ** cp2 = sort_array(sets, row_e_size);
+    int * cp2 = sort_array(sets, row_e_size);
     for (int a=0; a<row_size; a++){
         int c = 0;
-        int ** cp1 = sort_array(rows[a], row_e_size);
+        int * cp1 = sort_array(rows[a], row_e_size);
         for (int b=0; b<row_e_size; b++){
-            if (*cp1[b] == *cp2[b]) c++;
+            if (cp1[b] == cp2[b]) c++;
         }
         if (c >= row_e_size){
             return true;

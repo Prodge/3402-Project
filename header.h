@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <math.h>
+#include <unistd.h>
 
 /*
  *  Constants
  */
 
-extern const float DIA;
+extern const double DIA;
+extern const int BASE_ALLOC_PAIRS;
 
 typedef struct{
     double signature;
@@ -47,7 +50,7 @@ extern int** make_2d_int_array(int arraySizeX, int arraySizeY);
 
 extern double** make_2d_double_array(int arraySizeX, int arraySizeY);
 
-extern int** sort_array(int arr[], int size);
+extern int* sort_array(int arr[], int size);
 
 extern bool item_in_array(int **rows, int row_size, int row_e_size, int sets[]);
 
@@ -75,7 +78,7 @@ extern void print_block(Block block_set[], int c);
 
 extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows);
 
-extern IntArray get_neighbourhood_groups_for_column(IntArray pairs, int max_rows);
+extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows);
 
 extern Block create_block(double signature, int * row_ids, int column_number);
 
