@@ -1,3 +1,7 @@
+openmp/map_comparison
+openmp/map_visual
+openmp/show_thread
+
 # Object files
 *.o
 *.ko
