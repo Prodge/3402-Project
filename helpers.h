@@ -19,6 +19,15 @@ int** make_2d_int_array(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
+double** make_2d_double_array(int arraySizeX, int arraySizeY) {
+    double** theArray;
+    theArray = (double**) malloc(arraySizeX*sizeof(double*));
+    for (int i = 0; i < arraySizeX; i++){
+        theArray[i] = (double*) malloc(arraySizeY*sizeof(double));
+    }
+    return theArray;
+}
+
 int ** sort_array(int arr[], int size){
     int** theArray = make_2d_int_array(size, 1);
     for (int i = 0; i < size; ++i){
