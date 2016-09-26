@@ -1,13 +1,22 @@
-CC = gcc
-CFLAGS = -std=c99 -Wall -Werror -pedantic -fopenmp
+# Compiles source files into obj/ and links to ./main
 
-TARGET = main
-HEADER_FILES = helpers.h
+COMPILER = cc
+SOURCES = $(wildcard *.c)
+OBJ_FILES = $(addprefix obj/,$(notdir $(SOURCES:.c=.o)))
+CC_FLAGS = -std=c99 -Wall -Werror -pedantic -fopenmp
+LD_FLAGS =
+OBJECT_FOLDER = obj
+BIN = main
 
-main: $(TARGET)
 
-$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c $(HEADER_FILES)
+$(BIN): $(OBJ_FILES)
+	$(COMPILER) $(LD_FLAGS) -o $@ $^
+
+obj/%.o: %.c $(OBJECT_FOLDER)
+	$(COMPILER) $(CC_FLAGS) -c -o $@ $<
+
+$(OBJECT_FOLDER):
+	mkdir $(OBJECT_FOLDER)
 
 clean:
-	$(RM) $(TARGET)
+	rm -rf $(OBJECT_FOLDER) $(BIN)
