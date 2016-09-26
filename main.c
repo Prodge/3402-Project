@@ -22,6 +22,10 @@ typedef struct{
 
 const float DIA = 0.000001;
 
+void debug(char* str){
+    printf(">> %s\n", str);
+}
+
 void print_block(Block block_set[], int c){
     for (int j=0; j<c; j++){
         printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
@@ -194,7 +198,7 @@ void check_arguments(int argc, char* argv[]){
 }
 
 int main(int argc, char* argv[]) {
-    printf("Starting\n");
+    debug("Starting");
     check_arguments(argc, argv);
     char* data_filename = get_data_filename(argc, argv);
     int rows = get_num_rows_in_file(data_filename);
@@ -202,15 +206,18 @@ int main(int argc, char* argv[]) {
     double** matrix = read_matrix(data_filename, rows, columns);
     double* keys = read_keys(get_keys_filename(argc, argv));
 
-    printf("Files read.\n");
+    debug("Files read");
 
     BlockArray main_block_set;
     main_block_set.length = 0;
     main_block_set.array = make_block_array(0);
-    for (int i=0; i<columns; i++){
-        BlockArray column_blocks = create_blocks_for_column(matrix[i], rows, keys, i);
+    for (int i=0; i<rows; i++){
+        debug("in loop");
+        BlockArray column_blocks = create_blocks_for_column(matrix[i], columns, keys, i);
         main_block_set = merge_block_arrays(main_block_set, column_blocks);
     }
+    debug("Print blocks");
     print_block(main_block_set.array, main_block_set.length);
+    debug("Finished");
     return 0;
 }
