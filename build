@@ -1,0 +1,7 @@
+#!/bin/bash
+
+clear;
+make clear
+make
+echo done
+echo "   ---   ---   ---"
