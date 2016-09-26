@@ -26,7 +26,6 @@ typedef struct{
 } BlockArray;
 
 
-
 /*
  *  helpers.c
  */
@@ -44,6 +43,7 @@ extern bool item_in_array(int **rows, int row_size, int row_e_size, int sets[]);
 extern bool array_has_repeated_elements(int arr[], int size);
 
 extern void print_array(int **arr, int size, int elements);
+
 
 /*
  *  main.c
@@ -64,6 +64,11 @@ extern Block* make_block_array(int arraySizeX);
 extern BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number);
 
 extern BlockArray merge_block_arrays(BlockArray block_array_1, BlockArray block_array_2);
+
+
+/*
+ *  file.c
+ */
 
 extern FILE* open_file(char* filename);
 
