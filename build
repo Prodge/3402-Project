@@ -6,4 +6,4 @@ make clean
 make
 echo done
 echo "   ---   ---   ---"
-time $BIN data/data.txt
+time $BIN data/data.txt, data/keys.txt
