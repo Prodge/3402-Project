@@ -1,118 +1,46 @@
 #include "header.h"
 
 const double DIA = 0.000001;
-const int BASE_ALLOC_PAIRS = 100;
+const int PAIRS_BASE_MEMORY_ALLOCATION = 100;
+const int GROUPS_BASE_MEMORY_ALLOCATION = 50;
 
-void debug(char* str){
-    printf(">> %s\n", str);
-}
-
-void print_block(Block block_set[], int c){
-    for (int j=0; j<c; j++){
-        printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
-    }
-}
-
-int** realloc_2d_int_array(int old_size, int ** old_arr, int arraySizeX, int arraySizeY) {
-    int** theArray;
-    theArray = (int**) realloc(old_arr, arraySizeX*sizeof(int*));
-    //if (arraySizeY == 2) printf("%d\n", arraySizeX);
-    for (int i = old_size; i < arraySizeX; i++){
-        theArray[i] = (int*) malloc(arraySizeY*sizeof(int));
-    }
-    return theArray;
-}
-
-void print_collisions(CollisionArray collisions){
-    for (int j=0; j<collisions.length; j++){
-        printf("Collision: signature: %lf, columns: (", collisions.array[j].signature);
-        for (int i=0; i<collisions.array[j].length; i++){
-            printf("%d, ", collisions.array[i].columns[i]);
-        }
-        printf(")\n");
-    }
-}
-
-IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows){
+IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column){
     IntArray pairs;
     pairs.length = 0;
-    pairs.array = make_2d_int_array(max_rows, 2);
+    pairs.array = make_2d_int_array(PAIRS_BASE_MEMORY_ALLOCATION, 2);
     for (int head=0; head<size_of_column; head++){
-        int wimo = 0;
         for (int row=head+1; row<size_of_column; row++){
             if (fabs(column[head] - column[row]) < DIA){
-                if (pairs.length != 0 && pairs.length % BASE_ALLOC_PAIRS == 0){
-                    int new_len = pairs.length + BASE_ALLOC_PAIRS;
-                    int ** tmparr = realloc_2d_int_array(pairs.length, pairs.array, new_len, 2);
-                    pairs.array = tmparr;
-                }
+                pairs.array = reallocate_memory_for_2D_int(pairs.array, pairs.length, PAIRS_BASE_MEMORY_ALLOCATION, 2);
                 pairs.array[pairs.length][0] = head;
                 pairs.array[pairs.length][1] = row;
                 pairs.length++;
-                wimo++;
             }
         }
-        //printf("created %d pairs for row %d\n", wimo, head);
     }
-    //printf("pairs has memory of %d\n", abcde);
     return pairs;
 }
 
-bool repeated_element(int *set1){
-    if (set1[0] == set1[2] || set1[1] == set1[3] || set1[0] == set1[3] || set1[1] == set1[2]){
-        return true;
-    }
-    return false;
-}
-
-bool within_neighbourhood(double *set1){
-    if (fabs(set1[0] - set1[2]) < DIA &&
-        fabs(set1[0] - set1[3]) < DIA &&
-        fabs(set1[1] - set1[2]) < DIA &&
-        fabs(set1[1] - set1[3]) < DIA
-    ){
-        //printf("%lf %lf %lf %lf\n", fabs(set1[0] - set1[2]), fabs(set1[0] - set1[3]), fabs(set1[1] - set1[2]), fabs(set1[1] - set1[3]));
-        return true;
-    }
-    return false;
-}
-
-bool already_processed(int *org, int *set1){
-    if (org[0] == set1[0] && org[1] == set1[1]) return false;
-    return true;
-}
-
-IntArray get_neighbourhood_groups_for_column(IntArray pairs, double column[], int max_rows) {
+IntArray get_neighbourhood_groups_for_column(IntArray pairs, double column[]) {
     IntArray groups;
     groups.length = 0;
-    groups.array = make_2d_int_array(max_rows, 4);
+    groups.array = make_2d_int_array(GROUPS_BASE_MEMORY_ALLOCATION, 4);
     for (int head=0; head<pairs.length; head++){
-        int wimo = 0;
         for (int row=head+1; row<pairs.length; row++){
             int group[4] = {pairs.array[head][0], pairs.array[head][1], pairs.array[row][0], pairs.array[row][1]};
             int *sorted_group = sort_array(group, 4);
             double col_vals[4] = {column[pairs.array[head][0]], column[pairs.array[head][1]], column[pairs.array[row][0]], column[pairs.array[row][1]]};
             if (!repeated_element(group) && within_neighbourhood(col_vals) && !already_processed(pairs.array[head], sorted_group)){
-                if (groups.length != 0 && groups.length % BASE_ALLOC_PAIRS == 0){
-                    int new_len = groups.length + BASE_ALLOC_PAIRS;
-                    int ** tmparr = realloc_2d_int_array(groups.length, groups.array, new_len, 4);
-                    groups.array = tmparr;
-                }
+                groups.array = reallocate_memory_for_2D_int(groups.array, groups.length, GROUPS_BASE_MEMORY_ALLOCATION, 4);
                 groups.array[groups.length][0] = sorted_group[0];
                 groups.array[groups.length][1] = sorted_group[1];
                 groups.array[groups.length][2] = sorted_group[2];
                 groups.array[groups.length][3] = sorted_group[3];
                 groups.length++;
-                wimo++;
             }
         }
-        //printf("created %d groups for pair %d\n", wimo, head);
     }
-    //printf("finished creating blocks %d %d\n", pairs.length, (((pairs.length-1)/BASE_ALLOC_PAIRS)+1)*BASE_ALLOC_PAIRS);
-    for (int i=0; i<(((pairs.length-1)/BASE_ALLOC_PAIRS))*BASE_ALLOC_PAIRS; i++){
-        free(pairs.array[i]);
-    }
-    free(pairs.array);
+    free_memory_of_int_array(pairs, PAIRS_BASE_MEMORY_ALLOCATION);
     return groups;
 }
 
@@ -134,13 +62,7 @@ Block* make_block_array(int arraySizeX) {
 }
 
 BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number){
-    int max_rows = BASE_ALLOC_PAIRS;
-    IntArray pairs = get_neighbourhood_pairs_for_column(column, column_size, max_rows);
-    IntArray groups = get_neighbourhood_groups_for_column(
-        pairs,
-        column,
-        max_rows
-    );
+    IntArray groups = get_neighbourhood_groups_for_column(get_neighbourhood_pairs_for_column(column, column_size), column);
     BlockArray column_blocks;
     column_blocks.length = groups.length;
     column_blocks.array = make_block_array(groups.length);
@@ -151,10 +73,7 @@ BlockArray create_blocks_for_column(double column[], int column_size, double key
             column_number
         );
     }
-    for (int i=0; i<(((groups.length-1)/BASE_ALLOC_PAIRS)+1)*BASE_ALLOC_PAIRS; i++){
-        free(groups.array[i]);
-    }
-    free(groups.array);
+    free_memory_of_int_array(groups, GROUPS_BASE_MEMORY_ALLOCATION);
     return column_blocks;
 }
 

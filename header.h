@@ -10,7 +10,8 @@
  */
 
 extern const double DIA;
-extern const int BASE_ALLOC_PAIRS;
+extern const int PAIRS_BASE_MEMORY_ALLOCATION;
+extern const int GROUPS_BASE_MEMORY_ALLOCATION;
 
 typedef struct{
     double signature;
@@ -44,19 +45,21 @@ typedef struct{
  *  helpers.c
  */
 
-extern int factorial(int a);
-
 extern int** make_2d_int_array(int arraySizeX, int arraySizeY);
 
 extern double** make_2d_double_array(int arraySizeX, int arraySizeY);
 
 extern int* sort_array(int arr[], int size);
 
-extern bool item_in_array(int **rows, int row_size, int row_e_size, int sets[]);
+extern bool already_processed(int *org, int *set1);
 
-extern bool array_has_repeated_elements(int arr[], int size);
+extern bool repeated_element(int *set1);
 
-extern void print_array(int **arr, int size, int elements);
+extern bool within_neighbourhood(double *set1);
+
+extern int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size);
+
+extern void free_memory_of_int_array(IntArray int_array, int base_allocation);
 
 extern bool is_block_in_block_array(Block block, BlockArray blocks);
 
@@ -72,13 +75,9 @@ CollisionArray get_collisions(BlockArray blocks);
  *  main.c
  */
 
-void debug(char* str);
+extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column);
 
-extern void print_block(Block block_set[], int c);
-
-extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows);
-
-extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows);
+extern IntArray get_neighbourhood_groups_for_column(IntArray pairs, double column[]);
 
 extern Block create_block(double signature, int * row_ids, int column_number);
 
@@ -109,3 +108,13 @@ extern char* get_keys_filename(int argc, char* argv[]);
 
 extern void check_arguments(int argc, char* argv[]);
 
+
+/*
+ *  printer.c
+ */
+
+extern void debug(char* str);
+
+extern void print_block(Block block_set[], int c);
+
+extern void print_collisions(CollisionArray collisions);

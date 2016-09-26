@@ -1,13 +1,5 @@
 #include "header.h"
 
-int factorial(int a) {
-    int fac = 1;
-    for (int x=1; x <= a; x++){
-        fac *= x;
-    }
-    return fac;
-}
-
 int** make_2d_int_array(int arraySizeX, int arraySizeY) {
     int** theArray;
     theArray = (int**) malloc(arraySizeX*sizeof(int*));
@@ -26,6 +18,27 @@ double** make_2d_double_array(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
+int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size){
+    if (current_length != 0 && current_length % base_allocation == 0){
+        int** new_array;
+        int new_length = current_length + base_allocation;
+        new_array = (int**) realloc(array, new_length * sizeof(int*));
+        for (int i=current_length; i<new_length; i++){
+            new_array[i] = (int*) malloc(element_size * sizeof(int));
+        }
+        return new_array;
+    }
+    return array;
+}
+
+void free_memory_of_int_array(IntArray int_array, int base_allocation){
+    int total_allocated_length = ((int_array.length - 1) / base_allocation) * base_allocation;
+    for (int i=0; i<total_allocated_length; i++){
+        free(int_array.array[i]);
+    }
+    free(int_array.array);
+}
+
 int * sort_array(int * arr, int size){
     for (int i = 0; i < size; ++i){
         for (int j = i + 1; j < size; ++j){
@@ -39,37 +52,28 @@ int * sort_array(int * arr, int size){
     return arr;
 }
 
-bool item_in_array(int **rows, int row_size, int row_e_size, int sets[]){
-    int * cp2 = sort_array(sets, row_e_size);
-    for (int a=0; a<row_size; a++){
-        int c = 0;
-        int * cp1 = sort_array(rows[a], row_e_size);
-        for (int b=0; b<row_e_size; b++){
-            if (cp1[b] == cp2[b]) c++;
-        }
-        if (c >= row_e_size){
-            return true;
-        }
+bool repeated_element(int *set1){
+    if (set1[0] == set1[2] || set1[1] == set1[3] || set1[0] == set1[3] || set1[1] == set1[2]){
+        return true;
     }
     return false;
 }
 
-bool array_has_repeated_elements(int arr[], int size){
-    for (int i=0; i<size-1; i++){
-        for (int j=i+1; j<size; j++){
-            if (arr[i] == arr[j]) return true;
-        }
+bool within_neighbourhood(double *set1){
+    if (fabs(set1[0] - set1[2]) < DIA &&
+        fabs(set1[0] - set1[3]) < DIA &&
+        fabs(set1[1] - set1[2]) < DIA &&
+        fabs(set1[1] - set1[3]) < DIA
+    ){
+        //printf("%lf %lf %lf %lf\n", fabs(set1[0] - set1[2]), fabs(set1[0] - set1[3]), fabs(set1[1] - set1[2]), fabs(set1[1] - set1[3]));
+        return true;
     }
     return false;
 }
 
-void print_array(int **arr, int size, int elements){
-    for (int i=0;i <size;i++) {
-        for (int j=0; j< elements; j++){
-            printf("%d ", arr[i][j]);
-        }
-        printf("\n");
-    }
+bool already_processed(int *org, int *set1){
+    if (org[0] == set1[0] && org[1] == set1[1]) return false;
+    return true;
 }
 
 bool is_block_in_block_array(Block block, BlockArray blocks){
