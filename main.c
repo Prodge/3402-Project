@@ -27,7 +27,7 @@ void print_block(Block block_set[], int c){
     }
 }
 
-IntArray get_neighbourhood_pairs_for_column(float column[], int size_of_column, int max_rows){
+IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column, int max_rows){
     IntArray pairs;
     pairs.length = 0;
     pairs.array = make_2d_int_array(max_rows, 2);
@@ -80,8 +80,8 @@ Block* make_block_array(int arraySizeX) {
     return theArray;
 }
 
-BlockArray create_blocks_for_column(float column[], int column_size, double keys[], int column_number){
-    int max_rows = factorial(column_size)/factorial(column_size-2);
+BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number){
+    int max_rows = factorial(column_size);
     IntArray groups = get_neighbourhood_groups_for_column(
         get_neighbourhood_pairs_for_column(column, column_size, max_rows),
         max_rows
@@ -99,10 +99,34 @@ BlockArray create_blocks_for_column(float column[], int column_size, double keys
     return column_blocks;
 }
 
+BlockArray merge_block_arrays(BlockArray block_array_1, BlockArray block_array_2){
+    BlockArray merged_blocks;
+    merged_blocks.length = block_array_1.length + block_array_2.length;
+    merged_blocks.array = make_block_array(merged_blocks.length);
+    int c;
+    for (c=0; c<block_array_1.length; c++){
+        merged_blocks.array[c] = block_array_1.array[c];
+    }
+    for (int i=0; i<block_array_2.length; i++){
+        merged_blocks.array[c] = block_array_2.array[i];
+        c++;
+    }
+    return merged_blocks;
+}
+
 int main() {
-    float column[] = {0.047039, 0.037743, 10.051712, 0.03644, 0.025803,0.024889,0.047446,0.036642};
+    double column_set[2][8] = {
+        {0.047039, 0.037743, 10.051712, 0.03644, 0.025803,0.024889,0.047446,0.036642},
+        {0.042765, 0.030442, 0.02775, 0.04511, 0.061087, 0.031392, 0.057776, 0.058378},
+    };
     double keys[] = {12135267736472, 99115488405427, 30408863181157, 27151991364761, 25494155035412, 91903481209489, 28987097620742, 88358601329494};
-    BlockArray blck = create_blocks_for_column(column, 8, keys, 1);
-    print_block(blck.array, blck.length);
+    BlockArray main_block_set;
+    main_block_set.length = 0;
+    main_block_set.array = make_block_array(0);
+    for (int i=0; i<2; i++){
+        BlockArray column_blocks = create_blocks_for_column(column_set[i], 8, keys, i);
+        main_block_set = merge_block_arrays(main_block_set, column_blocks);
+    }
+    print_block(main_block_set.array, main_block_set.length);
     return 0;
 }
