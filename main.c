@@ -12,7 +12,7 @@ typedef struct{
 const float DIA = 0.000001;
 
 void print_block(Block block_set[], int c){
-    for (int j=1; j<c; j++){
+    for (int j=0; j<c; j++){
         printf("%f (%d %d %d %d) %d\n", block_set[j].signature, block_set[j].row_ids[0], block_set[j].row_ids[1], block_set[j].row_ids[2], block_set[j].row_ids[3], block_set[j].column_number);
     }
 }
@@ -22,9 +22,8 @@ int ** get_neighbourhood_pairs_for_column(float column[], int size, int max_rows
     int c = 0;
     for (int a=0; a<size; a=a+1){
         for (int b=0; b<size; b=b+1){
-            int ab[1] = {a};
-            int ba[1] = {b};
-            if (abs(column[a] - column[b]) < DIA && a != b && !item_in_array(pairs, c, 2, ab, ba, 1)){
+            int ab[2] = {a, b};
+            if (abs(column[a] - column[b]) < DIA && a != b && !array_has_repeated_elements(ab, 2) && !item_in_array(pairs, c, 2, ab) ){
                 pairs[c][0] = a;
                 pairs[c][1] = b;
                 c = c + 1;
@@ -41,7 +40,8 @@ int ** get_neighbourhood_groups_for_column(int **pairs, int max_rows) {
         if (pairs[a][0] == -1 && pairs[a][1] == -1) break;
         for (int b=0; b<max_rows; b=b+1){
             if (pairs[b][0] == -1 && pairs[b][1] == -1) break;
-            if (a!=b && !item_in_array(groups, c, 4, pairs[a], pairs[b], 2) && pairs[a][0] != pairs[b][0] && pairs[a][1] != pairs[b][1] && pairs[a][0] != pairs[b][1] && pairs[a][1] != pairs[b][0]){
+            int sets[4] = {pairs[a][0], pairs[a][1], pairs[b][0], pairs[b][1]};
+            if (a!=b && !array_has_repeated_elements(sets, 4) && !item_in_array(groups, c, 4, sets)){
                 groups[c][0] = pairs[a][0];
                 groups[c][1] = pairs[a][1];
                 groups[c][2] = pairs[b][0];

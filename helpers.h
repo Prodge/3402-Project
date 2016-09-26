@@ -19,25 +19,42 @@ int** make_2d_int_array(int arraySizeX, int arraySizeY) {
     return theArray;
 }
 
-bool item_in_array(int **rows, int row_size, int row_e_size, int set1[], int set2[], int set_size){
-    for (int a=0; a<row_size; a++){
-        int c = 0;
-        for (int b=0; b<row_e_size; b++){
-            if (set_size == 1){
-                if (rows[a][b] == set1[0] || rows[a][b] == set2[0]){
-                    c++;
-                }
-            }else{
-                if (rows[a][b] == set1[0] || rows[a][b] == set1[1] || rows[a][b] == set2[0] || rows[a][b] == set2[1]){
-                    c++;
-                }
+int ** sort_array(int arr[], int size){
+    int** theArray = make_2d_int_array(size, 1);
+    for (int i = 0; i < size; ++i){
+        for (int j = i + 1; j < size; ++j){
+            if (arr[i] > arr[j]){
+                int a =  arr[i];
+                arr[i] = arr[j];
+                arr[j] = a;
             }
         }
-        if (c == 4 && set_size != 1){
+    }
+    for (int i=0; i<size; i++){
+        theArray[i] = &arr[i];
+    }
+    return theArray;
+}
+
+bool item_in_array(int **rows, int row_size, int row_e_size, int sets[]){
+    int ** cp2 = sort_array(sets, row_e_size);
+    for (int a=0; a<row_size; a++){
+        int c = 0;
+        int ** cp1 = sort_array(rows[a], row_e_size);
+        for (int b=0; b<row_e_size; b++){
+            if (*cp1[b] == *cp2[b]) c++;
+        }
+        if (c >= row_e_size){
             return true;
         }
-        if (c == 2 && set_size == 1){
-            return true;
+    }
+    return false;
+}
+
+bool array_has_repeated_elements(int arr[], int size){
+    for (int i=0; i<size-1; i++){
+        for (int j=i+1; j<size; j++){
+            if (arr[i] == arr[j]) return true;
         }
     }
     return false;
