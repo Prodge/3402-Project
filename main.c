@@ -55,12 +55,6 @@ Block create_block(double signature, int * row_ids, int column_number){
     return block;
 }
 
-Block* make_block_array(int arraySizeX) {
-    Block* theArray;
-    theArray = (Block*) malloc(arraySizeX*sizeof(Block));
-    return theArray;
-}
-
 BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number){
     IntArray groups = get_neighbourhood_groups_for_column(get_neighbourhood_pairs_for_column(column, column_size), column);
     BlockArray column_blocks;
@@ -77,21 +71,23 @@ BlockArray create_blocks_for_column(double column[], int column_size, double key
     return column_blocks;
 }
 
-BlockArray merge_block_arrays(BlockArray block_array_1, BlockArray block_array_2){
-    BlockArray merged_blocks;
-    merged_blocks.length = block_array_1.length + block_array_2.length;
-    merged_blocks.array = make_block_array(merged_blocks.length);
-    int c;
-    for (c=0; c<block_array_1.length; c++){
-        merged_blocks.array[c] = block_array_1.array[c];
+BlockArray merge_block_array(BlockArray *block_array, int column_size){
+    BlockArray merged_block_array;
+    merged_block_array.length = 0;
+    merged_block_array.array = make_block_array(0);
+    for (int i=0; i<column_size; i++){
+        int previous_length = merged_block_array.length;
+        merged_block_array.length += block_array[i].length;
+        merged_block_array.array = (Block *) realloc(merged_block_array.array, merged_block_array.length * sizeof(Block));
+        int c = 0;
+        for (int j=previous_length; j<merged_block_array.length; j++){
+            merged_block_array.array[j] = block_array[i].array[c];
+            c++;
+        }
+        free(block_array[i].array);
     }
-    for (int i=0; i<block_array_2.length; i++){
-        merged_blocks.array[c] = block_array_2.array[i];
-        c++;
-    }
-    free(block_array_1.array);
-    free(block_array_2.array);
-    return merged_blocks;
+    free(block_array);
+    return merged_block_array;
 }
 
 int main(int argc, char* argv[]) {
@@ -105,15 +101,12 @@ int main(int argc, char* argv[]) {
 
     debug("Files read");
 
-    BlockArray main_block_set;
-    main_block_set.length = 0;
-    main_block_set.array = make_block_array(0);
+    BlockArray * columns_block_array = malloc(499 * sizeof(BlockArray));
     for (int i=0; i<499; i++){
-        //debug("in loop");
-        BlockArray column_blocks = create_blocks_for_column(matrix[i], rows, keys, i);
-        printf("Column %d has %d blocks\n", i, column_blocks.length);
-        main_block_set = merge_block_arrays(main_block_set, column_blocks);
+        columns_block_array[i] = create_blocks_for_column(matrix[i], rows, keys, i);
+        printf("Column %d has %d blocks\n", i, columns_block_array[i].length);
     }
+    BlockArray main_block_set = merge_block_array(columns_block_array, 499);
     debug("Print blocks");
     print_block(main_block_set.array, main_block_set.length);
     printf("%d\n", main_block_set.length);
