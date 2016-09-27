@@ -74,7 +74,7 @@ bool is_new_collision(Collision collision, CollisionArray collisions);
 CollisionArray get_collisions(BlockArray blocks);
 
 /*
- *  main.c
+ *  blocks.c
  */
 
 extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column);
