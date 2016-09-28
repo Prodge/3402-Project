@@ -4,12 +4,12 @@ const double DIA = 0.000001;
 const int PAIRS_BASE_MEMORY_ALLOCATION = 100;
 const int GROUPS_BASE_MEMORY_ALLOCATION = 50;
 
-IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column){
+IntArray get_neighbourhood_pairs_for_column(double column[], int length_of_column){
     IntArray pairs;
     pairs.length = 0;
     pairs.array = make_2d_int_array(PAIRS_BASE_MEMORY_ALLOCATION, 2);
-    for (int head=0; head<size_of_column; head++){
-        for (int row=head+1; row<size_of_column; row++){
+    for (int head=0; head<length_of_column; head++){
+        for (int row=head+1; row<length_of_column; row++){
             if (fabs(column[head] - column[row]) < DIA){
                 pairs.array = reallocate_memory_for_2D_int(pairs.array, pairs.length, PAIRS_BASE_MEMORY_ALLOCATION, 2);
                 pairs.array[pairs.length][0] = head;
@@ -21,7 +21,8 @@ IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column)
     return pairs;
 }
 
-IntArray get_neighbourhood_groups_for_column(IntArray pairs, double column[]) {
+IntArray get_neighbourhood_groups_for_column(double column[], int length_of_column) {
+    IntArray pairs = get_neighbourhood_pairs_for_column(column, length_of_column);
     IntArray groups;
     groups.length = 0;
     groups.array = make_2d_int_array(GROUPS_BASE_MEMORY_ALLOCATION, 4);
@@ -55,8 +56,8 @@ Block create_block(double signature, int * row_ids, int column_number){
     return block;
 }
 
-BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number){
-    IntArray groups = get_neighbourhood_groups_for_column(get_neighbourhood_pairs_for_column(column, column_size), column);
+BlockArray create_blocks_for_column(double column[], int length_of_column, double keys[], int column_number){
+    IntArray groups = get_neighbourhood_groups_for_column(column, length_of_column);
     BlockArray column_blocks;
     column_blocks.length = groups.length;
     column_blocks.array = make_block_array(groups.length);
@@ -71,11 +72,11 @@ BlockArray create_blocks_for_column(double column[], int column_size, double key
     return column_blocks;
 }
 
-BlockArray merge_block_array(BlockArray *block_array, int column_size){
+BlockArray merge_block_array(BlockArray *block_array, int length_of_column){
     BlockArray merged_block_array;
     merged_block_array.length = 0;
     merged_block_array.array = make_block_array(0);
-    for (int i=0; i<column_size; i++){
+    for (int i=0; i<length_of_column; i++){
         int previous_length = merged_block_array.length;
         merged_block_array.length += block_array[i].length;
         merged_block_array.array = (Block *) realloc(merged_block_array.array, merged_block_array.length * sizeof(Block));
