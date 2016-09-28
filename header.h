@@ -45,19 +45,19 @@ typedef struct{
  *  helpers.c
  */
 
-extern int** make_2d_int_array(int arraySizeX, int arraySizeY);
+extern int** make_2d_int_array(int number_of_rows, int number_of_columns);
 
-extern double** make_2d_double_array(int arraySizeX, int arraySizeY);
+extern double** make_2d_double_array(int number_of_rows, int number_of_columns);
 
-extern Block* make_block_array(int arraySizeX);
+extern Block* make_block_array(int number_of_rows);
 
 extern int* sort_array(int arr[], int size);
 
-extern bool already_processed(int *org, int *set1);
+extern bool already_processed(int *pair, int *sorted_group);
 
-extern bool repeated_element(int *set1);
+extern bool repeated_element(int *group);
 
-extern bool within_neighbourhood(double *set1);
+extern bool within_neighbourhood(double *group);
 
 extern int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size);
 
@@ -73,19 +73,20 @@ bool is_new_collision(Collision collision, CollisionArray collisions);
 
 CollisionArray get_collisions(BlockArray blocks);
 
+
 /*
- *  main.c
+ *  blocks.c
  */
 
-extern IntArray get_neighbourhood_pairs_for_column(double column[], int size_of_column);
+extern IntArray get_neighbourhood_pairs_for_column(double column[], int length_of_column);
 
-extern IntArray get_neighbourhood_groups_for_column(IntArray pairs, double column[]);
+extern IntArray get_neighbourhood_groups_for_column(double column[], int length_of_column);
 
 extern Block create_block(double signature, int * row_ids, int column_number);
 
-extern BlockArray create_blocks_for_column(double column[], int column_size, double keys[], int column_number);
+extern BlockArray create_blocks_for_column(double column[], int length_of_column, double keys[], int column_number);
 
-extern BlockArray merge_block_array(BlockArray *block_array, int column_size);
+extern BlockArray merge_block_array(BlockArray *block_array, int length_of_column);
 
 
 /*

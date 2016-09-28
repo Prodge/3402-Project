@@ -1,27 +1,27 @@
 #include "header.h"
 
-int** make_2d_int_array(int arraySizeX, int arraySizeY) {
-    int** theArray;
-    theArray = (int**) malloc(arraySizeX*sizeof(int*));
-    for (int i = 0; i < arraySizeX; i++){
-        theArray[i] = (int*) malloc(arraySizeY*sizeof(int));
+int** make_2d_int_array(int number_of_rows, int number_of_columns) {
+    int** the_array;
+    the_array = (int**) malloc(number_of_rows * sizeof(int*));
+    for (int i = 0; i < number_of_rows; i++){
+        the_array[i] = (int*) malloc(number_of_columns * sizeof(int));
     }
-    return theArray;
+    return the_array;
 }
 
-double** make_2d_double_array(int arraySizeX, int arraySizeY) {
-    double** theArray;
-    theArray = (double**) malloc(arraySizeX*sizeof(double*));
-    for (int i = 0; i < arraySizeX; i++){
-        theArray[i] = (double*) malloc(arraySizeY*sizeof(double));
+double** make_2d_double_array(int number_of_rows, int number_of_columns) {
+    double** the_array;
+    the_array = (double**) malloc(number_of_rows * sizeof(double*));
+    for (int i = 0; i < number_of_rows; i++){
+        the_array[i] = (double*) malloc(number_of_columns * sizeof(double));
     }
-    return theArray;
+    return the_array;
 }
 
-Block* make_block_array(int arraySizeX) {
-    Block* theArray;
-    theArray = (Block*) malloc(arraySizeX*sizeof(Block));
-    return theArray;
+Block* make_block_array(int number_of_rows) {
+    Block* the_array;
+    the_array = (Block*) malloc(number_of_rows * sizeof(Block));
+    return the_array;
 }
 
 int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size){
@@ -58,27 +58,26 @@ int * sort_array(int * arr, int size){
     return arr;
 }
 
-bool repeated_element(int *set1){
-    if (set1[0] == set1[2] || set1[1] == set1[3] || set1[0] == set1[3] || set1[1] == set1[2]){
-        return true;
-    }
-    return false;
-}
-
-bool within_neighbourhood(double *set1){
-    if (fabs(set1[0] - set1[2]) < DIA &&
-        fabs(set1[0] - set1[3]) < DIA &&
-        fabs(set1[1] - set1[2]) < DIA &&
-        fabs(set1[1] - set1[3]) < DIA
+bool repeated_element(int *group){
+    if (group[0] == group[2] || group[1] == group[3] ||
+        group[0] == group[3] || group[1] == group[2]
     ){
-        //printf("%lf %lf %lf %lf\n", fabs(set1[0] - set1[2]), fabs(set1[0] - set1[3]), fabs(set1[1] - set1[2]), fabs(set1[1] - set1[3]));
         return true;
     }
     return false;
 }
 
-bool already_processed(int *org, int *set1){
-    if (org[0] == set1[0] && org[1] == set1[1]) return false;
+bool within_neighbourhood(double *group){
+    if (fabs(group[0] - group[2]) < DIA && fabs(group[0] - group[3]) < DIA &&
+        fabs(group[1] - group[2]) < DIA && fabs(group[1] - group[3]) < DIA
+    ){
+        return true;
+    }
+    return false;
+}
+
+bool already_processed(int *pair, int *sorted_group){
+    if (pair[0] == sorted_group[0] && pair[1] == sorted_group[1]) return false;
     return true;
 }
 
