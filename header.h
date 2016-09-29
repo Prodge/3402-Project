@@ -41,6 +41,17 @@ typedef struct{
     Block* array;
 } BlockArray;
 
+typedef struct{
+    int columns_length;
+    int * columns;
+    int row_ids_length;
+    int * row_ids;
+} Match;
+
+typedef struct{
+    int length;
+    Match * array;
+} MatchArray;
 
 /*
  *  helpers.c
