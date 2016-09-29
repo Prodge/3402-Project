@@ -18,23 +18,24 @@ int main(int argc, char* argv[]) {
         columns_block_array[i] = create_blocks_for_column(matrix[i], rows, keys, i);
         printf("Column %d has %d blocks\n", i, columns_block_array[i].length);
     }
-    BlockArray main_block_set = merge_block_array(columns_block_array, columns);
     debug("Finished creating blocks for each column");
 
     debug("Starting to print all generated blocks");
-    print_block(main_block_set.array, main_block_set.length);
+    int total = 0;
+    for (int i=0; i<columns; i++){
+        print_block(columns_block_array[i].array, columns_block_array[i].length);
+        total += columns_block_array[i].length;
+    }
     debug("Finished printing all generated blocks");
 
     debug("Starting to find collisions");
     CollisionArray collisions = get_collisions(columns_block_array, columns);
     debug("Finished finding collisions");
 
-    // we can free the columns_block_array and main_block_set here if we don't use them in the post processing step
-
     debug("Starting to print collisions");
     print_collisions(collisions);
     debug("Finished printing collisions");
 
-    printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\n", main_block_set.length, collisions.length);
+    printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\n", total, collisions.length);
     return 0;
 }

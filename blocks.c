@@ -71,20 +71,3 @@ BlockArray create_blocks_for_column(double column[], int length_of_column, doubl
     free_memory_of_int_array(groups, GROUPS_BASE_MEMORY_ALLOCATION);
     return column_blocks;
 }
-
-BlockArray merge_block_array(BlockArray *block_array, int length_of_column){
-    BlockArray merged_block_array;
-    merged_block_array.length = 0;
-    merged_block_array.array = make_block_array(0);
-    for (int i=0; i<length_of_column; i++){
-        int previous_length = merged_block_array.length;
-        merged_block_array.length += block_array[i].length;
-        merged_block_array.array = (Block *) realloc(merged_block_array.array, merged_block_array.length * sizeof(Block));
-        int c = 0;
-        for (int j=previous_length; j<merged_block_array.length; j++){
-            merged_block_array.array[j] = block_array[i].array[c];
-            c++;
-        }
-    }
-    return merged_block_array;
-}
