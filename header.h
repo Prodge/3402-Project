@@ -12,6 +12,7 @@
 extern const double DIA;
 extern const int PAIRS_BASE_MEMORY_ALLOCATION;
 extern const int GROUPS_BASE_MEMORY_ALLOCATION;
+extern const int COLLISION_BASE_MEMORY_ALLOCATION;
 
 typedef struct{
     double signature;
@@ -67,11 +68,18 @@ extern bool is_block_in_block_array(Block block, BlockArray blocks);
 
 extern BlockArray unique_blocks(BlockArray blocks);
 
-Collision get_colliding_blocks(Block block, BlockArray blocks);
 
-bool is_new_collision(Collision collision, CollisionArray collisions);
+/*
+ *  collision.c
+ */
 
-CollisionArray get_collisions(BlockArray blocks);
+Collision get_colliding_blocks(Block block, BlockArray* blocks, int columns);
+
+bool is_new_signature(double signature, CollisionArray collisions);
+
+CollisionArray get_collisions(BlockArray* blocks, int columns);
+
+Collision* allocate_memory_for_collisions_if_needed(CollisionArray collosions);
 
 
 /*

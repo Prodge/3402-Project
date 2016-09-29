@@ -12,9 +12,12 @@ void print_block(Block block_set[], int c){
 
 void print_collisions(CollisionArray collisions){
     for (int j=0; j<collisions.length; j++){
-        printf("Collision: signature: %lf, columns: (", collisions.array[j].signature);
+        printf("sig: %lf\t col: (", collisions.array[j].signature);
         for (int i=0; i<collisions.array[j].length; i++){
-            printf("%d, ", collisions.array[i].columns[i]);
+            printf("%d", collisions.array[j].columns[i]);
+            if(i < collisions.array[j].length - 1){
+                printf(", ");
+            }
         }
         printf(")\n");
     }

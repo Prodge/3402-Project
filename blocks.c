@@ -85,8 +85,6 @@ BlockArray merge_block_array(BlockArray *block_array, int length_of_column){
             merged_block_array.array[j] = block_array[i].array[c];
             c++;
         }
-        free(block_array[i].array);
     }
-    free(block_array);
     return merged_block_array;
 }
