@@ -53,6 +53,11 @@ typedef struct{
     Match * array;
 } MatchArray;
 
+typedef struct{
+    int length;
+    int * array;
+} Int1DArray;
+
 /*
  *  helpers.c
  */
@@ -79,6 +84,7 @@ extern bool is_block_in_block_array(Block block, BlockArray blocks);
 
 extern BlockArray unique_blocks(BlockArray blocks);
 
+extern int get_number_of_repeated_elements(int row1[], int row1_size, int row2[], int row2_size);
 
 /*
  *  collision.c
@@ -130,6 +136,19 @@ extern void check_arguments(int argc, char* argv[]);
 
 
 /*
+ *  matches.c
+ */
+
+extern Match get_initial_match(int * row_ids, int * columns, int columns_length);
+
+extern MatchArray get_matching_blocks_in_columns(BlockArray * block_array, int columns);
+
+extern Int1DArray get_unique_array(int * array, int array_length);
+
+extern MatchArray merge_overlapping_blocks(MatchArray match_block_array);
+
+
+/*
  *  printer.c
  */
 
@@ -138,3 +157,5 @@ extern void debug(char* str);
 extern void print_block(Block block_set[], int c);
 
 extern void print_collisions(CollisionArray collisions);
+
+extern void print_match_arrays(MatchArray match_array);

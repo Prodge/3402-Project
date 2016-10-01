@@ -118,3 +118,13 @@ BlockArray unique_blocks(BlockArray blocks){
     }
     return out;
 }
+
+int get_number_of_repeated_elements(int row1[], int row1_size, int row2[], int row2_size){
+    int matches = 0;
+    for (int i=0; i<row1_size; i++){
+        for (int j=0; j<row2_size; j++){
+            if (row1[i] == row2[j]) matches++;
+        }
+    }
+    return matches;
+}
