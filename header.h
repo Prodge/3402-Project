@@ -13,6 +13,8 @@ extern const double DIA;
 extern const int PAIRS_BASE_MEMORY_ALLOCATION;
 extern const int GROUPS_BASE_MEMORY_ALLOCATION;
 extern const int COLLISION_BASE_MEMORY_ALLOCATION;
+extern const int OVERLAPPING_MATCHES_BASE_MEMORY_ALLOCATION;
+extern const int BLOCK_MATCHES_BASE_MEMORY_ALLOCATION;
 
 typedef struct{
     double signature;
@@ -147,6 +149,7 @@ extern Int1DArray get_unique_array(int * array, int array_length);
 
 extern MatchArray merge_overlapping_blocks(MatchArray match_block_array);
 
+extern MatchArray store_match_in_match_array(MatchArray match_array, Match new_match, int base_allocation);
 
 /*
  *  printer.c
