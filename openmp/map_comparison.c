@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <omp.ht>
+#include <omp.h>
 
 int tripple(int base);
 int *map(int (*func)(int), int *base, int length);
