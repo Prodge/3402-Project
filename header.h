@@ -16,6 +16,7 @@ extern const int GROUPS_BASE_MEMORY_ALLOCATION;
 extern const int COLLISION_BASE_MEMORY_ALLOCATION;
 extern const int OVERLAPPING_MATCHES_BASE_MEMORY_ALLOCATION;
 extern const int BLOCK_MATCHES_BASE_MEMORY_ALLOCATION;
+extern const int COLLISION_THREAD_MULTIPLIER;
 
 typedef struct{
     double signature;

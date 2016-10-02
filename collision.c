@@ -2,6 +2,7 @@
 #include <omp.h>
 
 const int COLLISION_BASE_MEMORY_ALLOCATION = 20;
+const int COLLISION_THREAD_MULTIPLIER = 3;
 
 /*Return a collision object, searching forward in columns, that summarises the columns in which the collision occurs*/
 Collision get_colliding_blocks(Block block, BlockArray* column_blocks, int columns){
@@ -85,7 +86,7 @@ CollisionArray merge_collisions(CollisionArray* collisions, int length){
 /*returns a unique CollisionArray of collisions*/
 CollisionArray get_collisions(BlockArray* column_blocks, int columns){
     int length = columns - 1; // Don't check the last column as we will never iterate in get_colliding_blocks
-    int num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+    int num_threads = sysconf(_SC_NPROCESSORS_ONLN) * COLLISION_THREAD_MULTIPLIER;
 
     // Create and init a CollisionArray for each thread
     CollisionArray *collisions;
