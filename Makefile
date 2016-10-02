@@ -4,7 +4,7 @@ COMPILER = cc
 SOURCES = $(wildcard *.c)
 OBJ_FILES = $(addprefix obj/,$(notdir $(SOURCES:.c=.o)))
 CC_FLAGS = -std=c99 -Wall -Werror -pedantic -fopenmp
-LD_FLAGS =
+LD_FLAGS = -fopenmp
 OBJECT_FOLDER = obj
 BIN = main
 

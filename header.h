@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <math.h>
 #include <unistd.h>
+#include <omp.h>
 
 /*
  *  Constants
@@ -99,6 +100,8 @@ bool is_new_signature(double signature, CollisionArray collisions);
 CollisionArray get_collisions(BlockArray* blocks, int columns);
 
 Collision* allocate_memory_for_collisions_if_needed(CollisionArray collosions);
+
+CollisionArray merge_collisions(CollisionArray* collisions, int length);
 
 
 /*

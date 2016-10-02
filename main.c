@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
     char* data_filename = get_data_filename(argc, argv);
     int rows = get_num_rows_in_file(data_filename);
     int columns = get_num_cols_in_file(data_filename, ',');
+    columns = 400;
     double** matrix = read_matrix(data_filename, rows, columns);
     double* keys = read_keys(get_keys_filename(argc, argv));
     debug("Finished reading files");
@@ -35,9 +36,9 @@ int main(int argc, char* argv[]) {
     debug("Starting to print collisions");
     print_collisions(collisions);
     debug("Finished printing collisions");
-    MatchArray mg = merge_overlapping_blocks(get_matching_blocks_in_columns(columns_block_array, columns));
+    /*MatchArray mg = merge_overlapping_blocks(get_matching_blocks_in_columns(columns_block_array, columns));*/
 
     printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\n", total, collisions.length);
-    printf("Total number of matches = %d\n", mg.length);
+    /*printf("Total number of matches = %d\n", mg.length);*/
     return 0;
 }
