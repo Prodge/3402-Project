@@ -3,6 +3,7 @@
 
 const int COLLISION_BASE_MEMORY_ALLOCATION = 20;
 
+/*Return a collision object, searching forward in columns, that summarises the columns in which the collision occurs*/
 Collision get_colliding_blocks(Block block, BlockArray* column_blocks, int columns){
     Collision collision;
     collision.length = 1;
@@ -14,6 +15,7 @@ Collision get_colliding_blocks(Block block, BlockArray* column_blocks, int colum
         for(int i=0; i<column_blocks[col].length; i++){
             if(block.signature == column_blocks[col].array[i].signature){ // don't need to test col num as we aren't searching that col
                 collision.length ++;
+                // Realloc for 1 column at a time as we aren't expecting many columns
                 int* tmp = realloc(collision.columns, collision.length * sizeof(int));
                 if(!tmp){
                     fprintf(stderr, "Out of memory.");
@@ -27,6 +29,7 @@ Collision get_colliding_blocks(Block block, BlockArray* column_blocks, int colum
     return collision;
 }
 
+/*Returns true if the given signature is not present in any of the collisions in the collision array*/
 bool is_new_signature(double signature, CollisionArray collisions){
     for(int i=0; i<collisions.length; i++){
         if (signature == collisions.array[i].signature){
@@ -36,6 +39,7 @@ bool is_new_signature(double signature, CollisionArray collisions){
     return true;
 }
 
+/*Allocates more memory for the collision array if it is full*/
 Collision* allocate_memory_for_collisions_if_needed(CollisionArray collisions){
     if(collisions.length > 0 && collisions.length % COLLISION_BASE_MEMORY_ALLOCATION == 0){
         collisions.array = realloc(collisions.array, (collisions.length + COLLISION_BASE_MEMORY_ALLOCATION) * sizeof(Collision));
@@ -47,6 +51,7 @@ Collision* allocate_memory_for_collisions_if_needed(CollisionArray collisions){
     return collisions.array;
 }
 
+/*Merges a pointer array of collision arrays together into a single collision array*/
 CollisionArray merge_collisions(CollisionArray* collisions, int length){
     int num_collisions = 0;
     for(int i=0; i<length; i++){
@@ -59,8 +64,18 @@ CollisionArray merge_collisions(CollisionArray* collisions, int length){
 
     for(int array=0; array<length; array++){
         for(int i=0; i<collisions[array].length; i++){
-            merged.array[merged.length] = collisions[array].array[i];
-            merged.length ++;
+            if(is_new_signature(collisions[array].array[i].signature, merged)){
+                // Signature doesn't exist, append it to the end
+                merged.array[merged.length] = collisions[array].array[i];
+                merged.length ++;
+            }
+            // If it isn't a new signature then this column-set will be a sub-set of the
+            // previously found column-set AS the collisions are ordered from first column
+            // to last column.
+            // As they were searching forward from that column,
+            // if duplicates occurs (when there is more than 1 column in a collision)
+            // THEN the latter collisions in this array are subsets.
+            // THEREFORE ignore the collision IF we have already seen the signature.
         }
     }
 
@@ -84,37 +99,34 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns){
     int thread_num, start_index, end_index, chunk_size;
     #pragma omp parallel private(thread_num, start_index, end_index, chunk_size)
     {
+        // Break the number of columns into a chunk per system thread
         thread_num = omp_get_thread_num();
         chunk_size = (length + num_threads - 1) / num_threads; // round up
         start_index = thread_num * chunk_size;
         end_index = (thread_num+1) * chunk_size;
+
+        // Cap the last thread to the number of columns
         if(length < end_index)
             end_index = length;
-        printf("Start: %d, Finish: %d, Chunk: %d\n", start_index, end_index, chunk_size);
-
 
         for(int col=start_index; col<end_index; col++){
-            /*printf("At column: %d\n", col);*/
+            // For each row in each column
             for(int i=0; i<column_blocks[col].length; i++){
+                // If we have already seen the signature in this thread, skip the work of 'get_colliding_blocks'
                 if(is_new_signature(column_blocks[col].array[i].signature, collisions[thread_num])){
                     Collision collision = get_colliding_blocks(column_blocks[col].array[i], column_blocks, columns);
                     if (collision.length > 1){
-
                         collisions[thread_num].length ++;
                         collisions[thread_num].array = allocate_memory_for_collisions_if_needed(collisions[thread_num]);
                         collisions[thread_num].array[collisions[thread_num].length-1] = collision;
-
-
                     }else{
                         free(collision.columns);
                     }
                 }
             }
         }
-
-        // Merge collisions, Expect there to be up to 4 duplicates (1 per thread), take the longest length for a given signature
-
     }
 
+    // Merge the arrays from each thread into 1 array, removing any duplicates
     return merge_collisions(collisions, num_threads);
 }

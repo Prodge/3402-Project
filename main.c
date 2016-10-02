@@ -8,7 +8,6 @@ int main(int argc, char* argv[]) {
     char* data_filename = get_data_filename(argc, argv);
     int rows = get_num_rows_in_file(data_filename);
     int columns = get_num_cols_in_file(data_filename, ',');
-    columns = 400;
     double** matrix = read_matrix(data_filename, rows, columns);
     double* keys = read_keys(get_keys_filename(argc, argv));
     debug("Finished reading files");
