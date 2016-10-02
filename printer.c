@@ -22,3 +22,17 @@ void print_collisions(CollisionArray collisions){
         printf(")\n");
     }
 }
+
+void print_match_arrays(MatchArray match_array){
+    for (int i=0; i<match_array.length; i++){
+        printf("Rows: ");
+        for (int a=0; a<match_array.array[i].row_ids_length; a++){
+            printf("%d ", match_array.array[i].row_ids[a]);
+        }
+        printf(" | Cols: ");
+        for (int a=0; a<match_array.array[i].columns_length; a++){
+            printf("%d ", match_array.array[i].columns[a]);
+        }
+        printf("\n");
+    }
+}

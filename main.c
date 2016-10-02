@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     debug("Starting to print all generated blocks");
     int total = 0;
     for (int i=0; i<columns; i++){
-        print_block(columns_block_array[i].array, columns_block_array[i].length);
+        //print_block(columns_block_array[i].array, columns_block_array[i].length);
         total += columns_block_array[i].length;
     }
     debug("Finished printing all generated blocks");
@@ -35,7 +35,9 @@ int main(int argc, char* argv[]) {
     debug("Starting to print collisions");
     print_collisions(collisions);
     debug("Finished printing collisions");
+    MatchArray mg = merge_overlapping_blocks(get_matching_blocks_in_columns(columns_block_array, columns));
 
     printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\n", total, collisions.length);
+    printf("Total number of matches = %d\n", mg.length);
     return 0;
 }
