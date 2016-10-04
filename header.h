@@ -27,7 +27,8 @@ typedef struct{
 typedef struct{
     double signature;
     int length;
-    int* columns;
+    int * columns;
+    int row_ids[4];
 } Collision;
 
 typedef struct{
@@ -37,8 +38,8 @@ typedef struct{
 
 typedef struct{
     int length;
-    int** array;
-} IntArray;
+    int ** array;
+} Int2DArray;
 
 typedef struct{
     int length;
@@ -82,7 +83,7 @@ extern bool within_neighbourhood(double *group);
 
 extern int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size);
 
-extern void free_memory_of_int_array(IntArray int_array, int base_allocation);
+extern void free_memory_of_int_array(Int2DArray int_array, int base_allocation);
 
 extern bool is_block_in_block_array(Block block, BlockArray blocks);
 
@@ -102,16 +103,14 @@ CollisionArray get_collisions(BlockArray* blocks, int columns);
 
 Collision* allocate_memory_for_collisions_if_needed(CollisionArray collosions);
 
-CollisionArray merge_collisions(CollisionArray* collisions, int length);
+CollisionArray merge_collisions(CollisionArray* collisions, int length, int total_collisions);
 
 
 /*
  *  blocks.c
  */
 
-extern IntArray get_neighbourhood_pairs_for_column(double column[], int length_of_column);
-
-extern IntArray get_neighbourhood_groups_for_column(double column[], int length_of_column);
+extern Int2DArray get_neighbourhood_pairs_for_column(double column[], int length_of_column);
 
 extern Block create_block(double signature, int * row_ids, int column_number);
 
@@ -147,13 +146,9 @@ extern void check_arguments(int argc, char* argv[]);
 
 extern Match get_initial_match(int * row_ids, int * columns, int columns_length);
 
-extern MatchArray get_matching_blocks_in_columns(BlockArray * block_array, int columns);
-
 extern Int1DArray get_unique_array(int * array, int array_length);
 
-extern MatchArray merge_overlapping_blocks(MatchArray match_block_array);
-
-extern MatchArray store_match_in_match_array(MatchArray match_array, Match new_match, int base_allocation);
+extern void merge_overlapping_blocks(CollisionArray collisions);
 
 /*
  *  printer.c

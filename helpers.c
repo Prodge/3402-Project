@@ -37,7 +37,7 @@ int** reallocate_memory_for_2D_int(int ** array, int current_length, int base_al
     return array;
 }
 
-void free_memory_of_int_array(IntArray int_array, int base_allocation){
+void free_memory_of_int_array(Int2DArray int_array, int base_allocation){
     int total_allocated_length = ((int_array.length - 1) / base_allocation) * base_allocation;
     for (int i=0; i<total_allocated_length; i++){
         free(int_array.array[i]);

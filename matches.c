@@ -32,15 +32,6 @@ Int1DArray get_unique_array(int * array, int array_length){
     return new_array;
 }
 
-MatchArray store_match_in_match_array(MatchArray match_array, Match new_match, int base_allocation){
-    if (match_array.length != 0 && match_array.length % base_allocation == 0){
-        match_array.array = realloc(match_array.array, (match_array.length + base_allocation) * sizeof(Match));
-    }
-    match_array.array[match_array.length] = new_match;
-    match_array.length++;
-    return match_array;
-}
-
 Match get_initial_match(int * row_ids, int * columns, int columns_length){
     Match match_block;
     match_block.row_ids = malloc(4 * sizeof(int));
@@ -56,93 +47,23 @@ Match get_initial_match(int * row_ids, int * columns, int columns_length){
     return match_block;
 }
 
-Match get_matches_for_block(BlockArray * block_array, int columns, int start_col, int start_block){
-    int current_column[1] = {start_col};
-    Match match_block = get_initial_match(block_array[start_col].array[start_block].row_ids, current_column, 1);
-    for (int search_col=(start_col+1); search_col<columns; search_col++){
-        for (int search_block=0; search_block<block_array[search_col].length; search_block++){
-            if (block_array[start_col].array[start_block].row_ids[0] < block_array[search_col].array[search_block].row_ids[0]){
-                break;
-            }
-            if (block_array[start_col].array[start_block].row_ids[0] == block_array[search_col].array[search_block].row_ids[0] &&
-                block_array[start_col].array[start_block].row_ids[1] == block_array[search_col].array[search_block].row_ids[1] &&
-                block_array[start_col].array[start_block].row_ids[2] == block_array[search_col].array[search_block].row_ids[2] &&
-                block_array[start_col].array[start_block].row_ids[3] == block_array[search_col].array[search_block].row_ids[3]
-            ){
-                match_block.columns = realloc(match_block.columns, (match_block.columns_length + 1) * sizeof(int));
-                match_block.columns[match_block.columns_length] = search_col;
-                match_block.columns_length++;
-                break;
-            }
-        }
-    }
-    return match_block;
-}
-
-MatchArray get_matching_blocks_in_columns(BlockArray * block_array, int columns){
-    MatchArray * main_array;
-    main_array = malloc((columns - 1) * sizeof(MatchArray));
-    int total_matches = 0;
-    int col;
-    #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN) * 3)
-    {
-        #pragma omp for private(col)
-        for (col=0; col<(columns-1); col++){
-            printf("Starting column %d ---- ", col);
-            MatchArray matches;
-            matches.length = 0;
-            matches.array = malloc(BLOCK_MATCHES_BASE_MEMORY_ALLOCATION * sizeof(Match));
-            for (int start_block=0; start_block<block_array[col].length; start_block++){
-                Match match_block = get_matches_for_block(block_array, columns, col, start_block);
-                if (match_block.columns_length > 1){
-                    matches = store_match_in_match_array(matches, match_block, BLOCK_MATCHES_BASE_MEMORY_ALLOCATION);
-                }else{
-                    free(match_block.row_ids);
-                    free(match_block.columns);
-                }
-            }
-            matches.array = realloc(matches.array, matches.length * sizeof(Match));
-            main_array[col] = matches;
-            printf("Found %d matches\n", matches.length);
-            #pragma omp atomic
-            total_matches += matches.length;
-        }
-    }
-    MatchArray matching_blocks;
-    matching_blocks.length = 0;
-    matching_blocks.array = malloc(total_matches * sizeof(Match));
-    for (int i=0; i<(columns-1); i++){
-        for (int j=0; j<main_array[i].length; j++){
-            if (!already_in_match_array(matching_blocks, main_array[i].array[j].row_ids, 4)){
-                matching_blocks.array[matching_blocks.length] = main_array[i].array[j];
-                matching_blocks.length++;
-            }
-        }
-    }
-    matching_blocks.array = realloc(matching_blocks.array, matching_blocks.length * sizeof(Match));
-    print_match_arrays(matching_blocks);
-    printf("%d\n", matching_blocks.length);
-    return matching_blocks;
-}
-
-MatchArray merge_overlapping_blocks(MatchArray match_block_array){
+void merge_overlapping_blocks(CollisionArray collisions){
     Match * overlapping_blocks_column;
-    overlapping_blocks_column = malloc(match_block_array.length * sizeof(Match));
-    int total = 0;
+    overlapping_blocks_column = malloc(collisions.length * sizeof(Match));
     int start_match;
-    #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN) * 3)
+    #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
     {
         #pragma omp for private(start_match)
-        for (start_match=0; start_match<match_block_array.length; start_match++){
-            Match overlapping_match = get_initial_match(match_block_array.array[start_match].row_ids, match_block_array.array[start_match].columns, match_block_array.array[start_match].columns_length);
-            for (int other_match=(start_match+1); other_match<match_block_array.length; other_match++){
-                if (match_block_array.array[start_match].columns_length == match_block_array.array[other_match].columns_length &&
-                    get_number_of_repeated_elements(match_block_array.array[start_match].columns, match_block_array.array[start_match].columns_length, match_block_array.array[other_match].columns, match_block_array.array[other_match].columns_length) == match_block_array.array[other_match].columns_length &&
-                    get_number_of_repeated_elements(match_block_array.array[start_match].row_ids, 4, match_block_array.array[other_match].row_ids, 4) >= 2
+        for (start_match=0; start_match<collisions.length; start_match++){
+            Match overlapping_match = get_initial_match(collisions.array[start_match].row_ids, collisions.array[start_match].columns, collisions.array[start_match].length);
+            for (int other_match=(start_match+1); other_match<collisions.length; other_match++){
+                if (collisions.array[start_match].length == collisions.array[other_match].length &&
+                    get_number_of_repeated_elements(collisions.array[start_match].columns, collisions.array[start_match].length, collisions.array[other_match].columns, collisions.array[other_match].length) == collisions.array[start_match].length &&
+                    get_number_of_repeated_elements(collisions.array[start_match].row_ids, 4, collisions.array[other_match].row_ids, 4) >= 2
                 ){
-                    overlapping_match.row_ids = realloc(overlapping_match.row_ids, (overlapping_match.row_ids_length + 4)* sizeof(int));
+                    overlapping_match.row_ids = realloc(overlapping_match.row_ids, (overlapping_match.row_ids_length + 4) * sizeof(int));
                     for (int a=0; a<4; a++){
-                        overlapping_match.row_ids[overlapping_match.row_ids_length] = match_block_array.array[other_match].row_ids[a];
+                        overlapping_match.row_ids[overlapping_match.row_ids_length] = collisions.array[other_match].row_ids[a];
                         overlapping_match.row_ids_length++;
                     }
                 }
@@ -157,10 +78,6 @@ MatchArray merge_overlapping_blocks(MatchArray match_block_array){
                 free(overlapping_match.columns);
                 overlapping_match.columns = columns.array;
                 overlapping_match.columns_length = columns.length;
-
-                #pragma omp critical
-                total++;
-
             }else{
                 free(overlapping_match.row_ids);
                 free(overlapping_match.columns);
@@ -172,17 +89,23 @@ MatchArray merge_overlapping_blocks(MatchArray match_block_array){
     }
     MatchArray overlapping_matches_array;
     overlapping_matches_array.length = 0;
-    overlapping_matches_array.array = malloc(total*sizeof(Match));
-    for (int i=0; i<match_block_array.length; i++){
+    overlapping_matches_array.array = malloc(collisions.length * sizeof(Match));
+    for (int i=0; i<collisions.length; i++){
         if (overlapping_blocks_column[i].row_ids_length != -1 && overlapping_blocks_column[i].columns_length != -1){
             if (!already_in_match_array(overlapping_matches_array, overlapping_blocks_column[i].row_ids, overlapping_blocks_column[i].row_ids_length)){
+                printf("{");
+                for (int j=0; j<overlapping_blocks_column[i].row_ids_length; j++){
+                    if ((j+1) == overlapping_blocks_column[i].row_ids_length){
+                        printf("%d}\n", overlapping_blocks_column[i].row_ids[j]);
+                    }else{
+                        printf("%d, ", overlapping_blocks_column[i].row_ids[j]);
+                    }
+                }
                 overlapping_matches_array.array[overlapping_matches_array.length] = overlapping_blocks_column[i];
                 overlapping_matches_array.length++;
             }
         }
     }
-    overlapping_matches_array.array = realloc(overlapping_matches_array.array, overlapping_matches_array.length * sizeof(Match));
-    print_match_arrays(overlapping_matches_array);
-    printf("%d\n", overlapping_matches_array.length);
-    return overlapping_matches_array;
+    printf("Total number of merged blocks found = %d\n", overlapping_matches_array.length);
+    free(overlapping_matches_array.array);
 }

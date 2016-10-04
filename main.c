@@ -15,25 +15,19 @@ int main(int argc, char* argv[]) {
     debug("Starting create blocks for each column");
     BlockArray* columns_block_array = malloc(columns * sizeof(BlockArray));
     int i;
-    #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN) * 3)
+    int total = 0;
+    omp_set_nested(1);
+    #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
     {
         #pragma omp for private(i)
         for (i=0; i<columns; i++){
             columns_block_array[i] = create_blocks_for_column(matrix[i], rows, keys, i);
             printf("Column %d has %d blocks\n", i, columns_block_array[i].length);
+            #pragma omp atomic
+            total += columns_block_array[i].length;
         }
     }
     debug("Finished creating blocks for each column");
-
-    MatchArray mg = merge_overlapping_blocks(get_matching_blocks_in_columns(columns_block_array, columns));
-
-    debug("Starting to print all generated blocks");
-    int total = 0;
-    for (int i=0; i<columns; i++){
-        //print_block(columns_block_array[i].array, columns_block_array[i].length);
-        total += columns_block_array[i].length;
-    }
-    debug("Finished printing all generated blocks");
 
     debug("Starting to find collisions");
     CollisionArray collisions = get_collisions(columns_block_array, columns);
@@ -43,7 +37,10 @@ int main(int argc, char* argv[]) {
     print_collisions(collisions);
     debug("Finished printing collisions");
 
+    debug("Starting post processing");
+    merge_overlapping_blocks(collisions);
+    debug("Finished post processing");
+
     printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\n", total, collisions.length);
-    printf("Total number of matches = %d\n", mg.length);
     return 0;
 }

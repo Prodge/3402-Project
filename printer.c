@@ -12,7 +12,7 @@ void print_block(Block block_set[], int c){
 
 void print_collisions(CollisionArray collisions){
     for (int j=0; j<collisions.length; j++){
-        printf("sig: %lf\t col: (", collisions.array[j].signature);
+        printf("sig: %lf\t  row_ids: {%d, %d, %d, %d}  col: (", collisions.array[j].signature, collisions.array[j].row_ids[0], collisions.array[j].row_ids[1], collisions.array[j].row_ids[2], collisions.array[j].row_ids[3]);
         for (int i=0; i<collisions.array[j].length; i++){
             printf("%d", collisions.array[j].columns[i]);
             if(i < collisions.array[j].length - 1){
