@@ -14,8 +14,6 @@ extern const double DIA;
 extern const int PAIRS_BASE_MEMORY_ALLOCATION;
 extern const int GROUPS_BASE_MEMORY_ALLOCATION;
 extern const int COLLISION_BASE_MEMORY_ALLOCATION;
-extern const int OVERLAPPING_MATCHES_BASE_MEMORY_ALLOCATION;
-extern const int BLOCK_MATCHES_BASE_MEMORY_ALLOCATION;
 extern const int COLLISION_THREAD_MULTIPLIER;
 
 typedef struct{
@@ -23,6 +21,11 @@ typedef struct{
     int row_ids[4];
     int column_number;
 } Block;
+
+typedef struct{
+    int length;
+    Block* array;
+} BlockArray;
 
 typedef struct{
     double signature;
@@ -38,13 +41,13 @@ typedef struct{
 
 typedef struct{
     int length;
-    int ** array;
-} Int2DArray;
+    int * array;
+} Int1DArray;
 
 typedef struct{
     int length;
-    Block* array;
-} BlockArray;
+    int ** array;
+} Int2DArray;
 
 typedef struct{
     int columns_length;
@@ -58,10 +61,6 @@ typedef struct{
     Match * array;
 } MatchArray;
 
-typedef struct{
-    int length;
-    int * array;
-} Int1DArray;
 
 /*
  *  helpers.c
@@ -71,25 +70,22 @@ extern int** make_2d_int_array(int number_of_rows, int number_of_columns);
 
 extern double** make_2d_double_array(int number_of_rows, int number_of_columns);
 
-extern Block* make_block_array(int number_of_rows);
+extern int** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size);
 
-extern int* sort_array(int arr[], int size);
+extern void free_memory_of_int_array(Int2DArray int_array, int base_allocation);
 
-extern bool already_processed(int *pair, int *sorted_group);
+extern int* sort_array(int * arr, int size);
 
 extern bool repeated_element(int *group);
 
 extern bool within_neighbourhood(double *group);
 
-extern int ** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size);
-
-extern void free_memory_of_int_array(Int2DArray int_array, int base_allocation);
-
-extern bool is_block_in_block_array(Block block, BlockArray blocks);
-
-extern BlockArray unique_blocks(BlockArray blocks);
+extern bool already_processed(int *pair, int *sorted_group);
 
 extern int get_number_of_repeated_elements(int row1[], int row1_size, int row2[], int row2_size);
+
+extern Int1DArray get_unique_array(int * array, int array_length);
+
 
 /*
  *  collision.c
@@ -110,13 +106,13 @@ CollisionArray merge_collisions(CollisionArray* collisions, int length, int tota
  *  blocks.c
  */
 
-extern Int2DArray get_neighbourhood_pairs_for_column(double column[], int length_of_column);
+Int2DArray get_neighbourhood_pairs_for_column(double column[], int length_of_column);
+
+BlockArray store_block_in_block_array(BlockArray block_array, int base_allocation, Block block);
 
 extern Block create_block(double signature, int * row_ids, int column_number);
 
 extern BlockArray create_blocks_for_column(double column[], int length_of_column, double keys[], int column_number);
-
-extern BlockArray merge_block_array(BlockArray *block_array, int length_of_column);
 
 
 /*
@@ -146,9 +142,12 @@ extern void check_arguments(int argc, char* argv[]);
 
 extern Match get_initial_match(int * row_ids, int * columns, int columns_length);
 
-extern Int1DArray get_unique_array(int * array, int array_length);
+extern int merge_overlapping_blocks(CollisionArray collisions);
 
-extern void merge_overlapping_blocks(CollisionArray collisions);
+bool already_in_match_array(MatchArray match_array, int * row_ids, int row_ids_length);
+
+int remove_duplicates_and_print_overlapping_blocks(Match * overlapping_blocks_column, int length);
+
 
 /*
  *  printer.c

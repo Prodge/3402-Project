@@ -4,15 +4,14 @@ int main(int argc, char* argv[]) {
     debug("Checking arguments");
     check_arguments(argc, argv);
 
-    debug("Starting to read files");
+    debug("Reading files");
     char* data_filename = get_data_filename(argc, argv);
     int rows = get_num_rows_in_file(data_filename);
     int columns = get_num_cols_in_file(data_filename, ',');
     double** matrix = read_matrix(data_filename, rows, columns);
     double* keys = read_keys(get_keys_filename(argc, argv));
-    debug("Finished reading files");
 
-    debug("Starting create blocks for each column");
+    debug("Creating blocks for each column");
     BlockArray* columns_block_array = malloc(columns * sizeof(BlockArray));
     int i;
     int total = 0;
@@ -27,20 +26,17 @@ int main(int argc, char* argv[]) {
             total += columns_block_array[i].length;
         }
     }
-    debug("Finished creating blocks for each column");
 
-    debug("Starting to find collisions");
+    debug("Finding collisions");
     CollisionArray collisions = get_collisions(columns_block_array, columns);
-    debug("Finished finding collisions");
-
-    debug("Starting to print collisions");
     print_collisions(collisions);
-    debug("Finished printing collisions");
 
-    debug("Starting post processing");
-    merge_overlapping_blocks(collisions);
-    debug("Finished post processing");
+    debug("Finding overlapping blocks");
+    int total_merged_blocks = merge_overlapping_blocks(collisions);
 
-    printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\n", total, collisions.length);
+    printf("--------------------S U M M A R Y--------------------\n");
+    printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\nTotal number of merged blocks = %d\n", total, collisions.length, total_merged_blocks);
+    printf("-----------------------------------------------------\n");
+
     return 0;
 }

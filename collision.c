@@ -1,11 +1,11 @@
 #include "header.h"
-#include <omp.h>
 
 const int COLLISION_BASE_MEMORY_ALLOCATION = 20;
 const int COLLISION_THREAD_MULTIPLIER = 3;
 
 /*Return a collision object, searching forward in columns, that summarises the columns in which the collision occurs*/
 Collision get_colliding_blocks(Block block, BlockArray* column_blocks, int columns){
+    // Creates initial collision
     Collision collision;
     collision.length = 1;
     collision.signature = block.signature;
@@ -16,9 +16,14 @@ Collision get_colliding_blocks(Block block, BlockArray* column_blocks, int colum
     collision.row_ids[2] = block.row_ids[2];
     collision.row_ids[3] = block.row_ids[3];
 
+    // From the next column of the current column, go through each block finding blocks with the same signature
     for(int col=block.column_number+1; col<columns; col++){
         for(int i=0; i<column_blocks[col].length; i++){
+            // If the first row_id of the block we are comparing with is less than that of the first
+            // row_id of the comparing block then break out of loop as blocks won't have the same signature
+            // as the blocks in each column are sorted and each block is sorted
             if (block.row_ids[0] < column_blocks[col].array[i].row_ids[0]) break;
+
             if(block.signature == column_blocks[col].array[i].signature){ // don't need to test col num as we aren't searching that col
                 collision.length ++;
                 // Realloc for 1 column at a time as we aren't expecting many columns
@@ -65,21 +70,19 @@ CollisionArray merge_collisions(CollisionArray* collisions, int length, int tota
     merged.array = malloc(sizeof(Collision) * total_collisions);
 
     for(int array=0; array<length; array++){
-        if (collisions[array].length != 0){
-            for(int i=0; i<collisions[array].length; i++){
-                if(is_new_signature(collisions[array].array[i].signature, merged)){
-                    // Signature doesn't exist, append it to the end
-                    merged.array[merged.length] = collisions[array].array[i];
-                    merged.length ++;
-                }
-                // If it isn't a new signature then this column-set will be a sub-set of the
-                // previously found column-set AS the collisions are ordered from first column
-                // to last column.
-                // As they were searching forward from that column,
-                // if duplicates occurs (when there is more than 1 column in a collision)
-                // THEN the latter collisions in this array are subsets.
-                // THEREFORE ignore the collision IF we have already seen the signature.
+        for(int i=0; i<collisions[array].length; i++){
+            if(is_new_signature(collisions[array].array[i].signature, merged)){
+                // Signature doesn't exist, append it to the end
+                merged.array[merged.length] = collisions[array].array[i];
+                merged.length ++;
             }
+            // If it isn't a new signature then this column-set will be a sub-set of the
+            // previously found column-set AS the collisions are ordered from first column
+            // to last column.
+            // As they were searching forward from that column,
+            // if duplicates occurs (when there is more than 1 column in a collision)
+            // THEN the latter collisions in this array are subsets.
+            // THEREFORE ignore the collision IF we have already seen the signature.
         }
     }
 
@@ -88,20 +91,22 @@ CollisionArray merge_collisions(CollisionArray* collisions, int length, int tota
 
 /*returns a unique CollisionArray of collisions*/
 CollisionArray get_collisions(BlockArray* column_blocks, int columns){
-    // Create and init a CollisionArray for each thread
+    // Create and init a CollisionArray for each column
     CollisionArray * collisions;
     collisions = malloc((columns-1) * sizeof(CollisionArray));
 
-    int total_collisions = 0;
-    int col;
+    int total_collisions = 0; // Keeps track of total collisions found
+    int col; // Loop counter needs to be declared outside of openmp loop
+
     #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN) * 3)
     {
         #pragma omp for private(col)
         for(col=0; col<(columns-1); col++){
-            printf("Starting column %d ---- ", col);
+            // Inits collision array for column
             collisions[col].length=0;
             collisions[col].array = malloc(sizeof(Collision) * COLLISION_BASE_MEMORY_ALLOCATION);
-            // For each row in each column
+
+            // For each block in column find matching signatures in other columns
             for(int i=0; i<column_blocks[col].length; i++){
                 Collision collision = get_colliding_blocks(column_blocks[col].array[i], column_blocks, columns);
                 if (collision.length > 1){
@@ -112,13 +117,17 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns){
                     free(collision.columns);
                 }
             }
-            collisions[col].array = realloc(collisions[col].array, sizeof(Collision) * collisions[col].length);
+
             #pragma omp atomic
             total_collisions += collisions[col].length;
-            printf(" Found %d collisions\n", collisions[col].length);
+
+            // Free unused memory of collision array
+            collisions[col].array = realloc(collisions[col].array, sizeof(Collision) * collisions[col].length);
+
+            printf("At column %d found %d collisions\n", col, collisions[col].length);
         }
     }
 
-    // Merge the arrays from each thread into 1 array, removing any duplicates
+    // Merges the collision arrays from each column into 1 array, removing any duplicates
     return merge_collisions(collisions, columns-1, total_collisions);
 }
