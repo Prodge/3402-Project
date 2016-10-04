@@ -1,5 +1,6 @@
 #include "header.h"
 
+/*return a memory allocated 2D (rows * columns) int array*/
 int** make_2d_int_array(int number_of_rows, int number_of_columns) {
     int** the_array;
     the_array = (int**) malloc(number_of_rows * sizeof(int*));
@@ -9,6 +10,7 @@ int** make_2d_int_array(int number_of_rows, int number_of_columns) {
     return the_array;
 }
 
+/*return a memory allocated 2D (rows x columns) double array*/
 double** make_2d_double_array(int number_of_rows, int number_of_columns) {
     double** the_array;
     the_array = (double**) malloc(number_of_rows * sizeof(double*));
@@ -18,12 +20,7 @@ double** make_2d_double_array(int number_of_rows, int number_of_columns) {
     return the_array;
 }
 
-Block* make_block_array(int number_of_rows) {
-    Block* the_array;
-    the_array = (Block*) malloc(number_of_rows * sizeof(Block));
-    return the_array;
-}
-
+/*returns 2D int array with reallocated memory if needed*/
 int** reallocate_memory_for_2D_int(int ** array, int current_length, int base_allocation, int element_size){
     if (current_length != 0 && current_length % base_allocation == 0){
         int** new_array;
@@ -37,7 +34,8 @@ int** reallocate_memory_for_2D_int(int ** array, int current_length, int base_al
     return array;
 }
 
-void free_memory_of_int_array(IntArray int_array, int base_allocation){
+/*free memory of a 2D int array*/
+void free_memory_of_int_array(Int2DArray int_array, int base_allocation){
     int total_allocated_length = ((int_array.length - 1) / base_allocation) * base_allocation;
     for (int i=0; i<total_allocated_length; i++){
         free(int_array.array[i]);
@@ -45,6 +43,7 @@ void free_memory_of_int_array(IntArray int_array, int base_allocation){
     free(int_array.array);
 }
 
+/*sort a 1D array pointer*/
 int* sort_array(int * arr, int size){
     for (int i = 0; i < size; ++i){
         for (int j = i + 1; j < size; ++j){
@@ -58,6 +57,7 @@ int* sort_array(int * arr, int size){
     return arr;
 }
 
+/*returns true if there are repeated elements of an array of size 4*/
 bool repeated_element(int *group){
     if (group[0] == group[2] || group[1] == group[3] ||
         group[0] == group[3] || group[1] == group[2]
@@ -67,6 +67,7 @@ bool repeated_element(int *group){
     return false;
 }
 
+/*returns true if a an array of size of 4 is in the neighbourhood*/
 bool within_neighbourhood(double *group){
     if (fabs(group[0] - group[2]) < DIA && fabs(group[0] - group[3]) < DIA &&
         fabs(group[1] - group[2]) < DIA && fabs(group[1] - group[3]) < DIA
@@ -76,49 +77,13 @@ bool within_neighbourhood(double *group){
     return false;
 }
 
+/*return true if a group was already checked*/
 bool already_processed(int *pair, int *sorted_group){
     if (pair[0] == sorted_group[0] && pair[1] == sorted_group[1]) return false;
     return true;
 }
 
-bool is_block_in_block_array(Block block, BlockArray blocks){
-    for(int i=0; i<blocks.length; i++){
-        if( block.signature == blocks.array[i].signature &&
-            block.column_number == blocks.array[i].column_number &&
-            block.row_ids[0] == blocks.array[i].row_ids[0] &&
-            block.row_ids[1] == blocks.array[i].row_ids[1] &&
-            block.row_ids[2] == blocks.array[i].row_ids[2] &&
-            block.row_ids[3] == blocks.array[i].row_ids[3]){
-                return true;
-        }
-    }
-    return false;
-}
-
-BlockArray unique_blocks(BlockArray blocks){
-    BlockArray out;
-
-    // Add first block
-    out.length = 1;
-    out.array = make_block_array(1);
-    out.array[0] = blocks.array[0];
-
-    // Add other blocks if they don't already exist
-    for(int i=1; i<blocks.length; i++){
-        if(! is_block_in_block_array(blocks.array[i], out)){
-            out.length ++;
-            Block* tmp = realloc(out.array, out.length * sizeof(Block));
-            if(!tmp){
-                fprintf(stderr, "Out of memory.");
-                exit(1);
-            }
-            out.array = tmp;
-            out.array[out.length-1] = blocks.array[i];
-        }
-    }
-    return out;
-}
-
+/*returns number of repeated elements of an array of an size*/
 int get_number_of_repeated_elements(int row1[], int row1_size, int row2[], int row2_size){
     int matches = 0;
     for (int i=0; i<row1_size; i++){
@@ -127,4 +92,23 @@ int get_number_of_repeated_elements(int row1[], int row1_size, int row2[], int r
         }
     }
     return matches;
+}
+
+/*returns an array with unique sorted elements*/
+Int1DArray get_unique_array(int * array, int array_length){
+    Int1DArray new_array;
+    new_array.array = malloc(array_length * sizeof(int));
+    new_array.length = 0;
+    for(int c=0; c<array_length; c++){
+        int d;
+        for(d=0; d<new_array.length; d++){
+            if(array[c] == new_array.array[d]) break;
+        }
+        if(d == new_array.length) {
+            new_array.array[new_array.length] = array[c];
+            new_array.length++;
+        }
+    }
+    new_array.array = realloc(new_array.array, new_array.length * sizeof(int));
+    return new_array;
 }
