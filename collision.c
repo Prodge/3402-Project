@@ -86,48 +86,59 @@ CollisionArray merge_collisions(CollisionArray* collisions, int length, int tota
         }
     }
 
+    merged.array = realloc(merged.array, merged.length * sizeof(Collision));
+
     return merged;
+}
+
+/*adds a new collision to the collision array and returns the collision array*/
+CollisionArray update_collision(CollisionArray col_array, Collision coll){
+    col_array.length ++;
+    col_array.array = allocate_memory_for_collisions_if_needed(col_array);
+    col_array.array[col_array.length-1] = coll;
+    return col_array;
 }
 
 /*returns a unique CollisionArray of collisions*/
 CollisionArray get_collisions(BlockArray* column_blocks, int columns){
-    // Create and init a CollisionArray for each column
+    // Inits collision array for each thread
     CollisionArray * collisions;
-    collisions = malloc((columns-1) * sizeof(CollisionArray));
+    int threads = sysconf(_SC_NPROCESSORS_ONLN) * 3;
+    collisions = malloc(threads * sizeof(CollisionArray));
+    for (int i=0; i<threads; i++){
+        collisions[i].length=0;
+        collisions[i].array = malloc(sizeof(Collision) * COLLISION_BASE_MEMORY_ALLOCATION);
+    }
 
     int total_collisions = 0; // Keeps track of total collisions found
     int col; // Loop counter needs to be declared outside of openmp loop
 
-    #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN) * 3)
+    #pragma omp parallel num_threads(threads)
     {
         #pragma omp for private(col)
         for(col=0; col<(columns-1); col++){
-            // Inits collision array for column
-            collisions[col].length=0;
-            collisions[col].array = malloc(sizeof(Collision) * COLLISION_BASE_MEMORY_ALLOCATION);
-
+            int this_thread = omp_get_thread_num();
             // For each block in column find matching signatures in other columns
             for(int i=0; i<column_blocks[col].length; i++){
-                Collision collision = get_colliding_blocks(column_blocks[col].array[i], column_blocks, columns);
-                if (collision.length > 1){
-                    collisions[col].length ++;
-                    collisions[col].array = allocate_memory_for_collisions_if_needed(collisions[col]);
-                    collisions[col].array[collisions[col].length-1] = collision;
-                }else{
-                    free(collision.columns);
+                if (is_new_signature(column_blocks[col].array[i].signature, collisions[this_thread])){
+                    Collision collision = get_colliding_blocks(column_blocks[col].array[i], column_blocks, columns);
+                    if (collision.length > 1){
+                        #pragma omp critical
+                        collisions[this_thread] = update_collision(collisions[this_thread], collision);
+
+                        #pragma omp critical
+                        total_collisions += collision.length;
+
+                    }else{
+                        free(collision.columns);
+                    }
                 }
             }
 
-            #pragma omp atomic
-            total_collisions += collisions[col].length;
-
-            // Free unused memory of collision array
-            collisions[col].array = realloc(collisions[col].array, sizeof(Collision) * collisions[col].length);
-
-            printf("At column %d found %d collisions\n", col, collisions[col].length);
+            printf("Finished column %d\n", col);
         }
     }
 
     // Merges the collision arrays from each column into 1 array, removing any duplicates
-    return merge_collisions(collisions, columns-1, total_collisions);
+    return merge_collisions(collisions, threads, total_collisions);
 }
