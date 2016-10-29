@@ -132,9 +132,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    int total_merged_blocks = merge_overlapping_blocks(collisions, proc_id, num_procs);
+
     if (proc_id == 0){
         debug("Finding overlapping blocks");
-        int total_merged_blocks = merge_overlapping_blocks(collisions);
 
         printf("--------------------S U M M A R Y--------------------\n");
         printf("Total number of blocks generated = %d\nTotal number of collisions found = %d\nTotal number of merged blocks = %d\n", total, collisions.length, total_merged_blocks);
