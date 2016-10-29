@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     omp_set_nested(1);
 	
 	int avg_rows_per_proc = columns / (num_procs-1);
-	columns = 499; 
+	columns = 499;
 
     // if master
     if (proc_id == 0){
@@ -100,15 +100,39 @@ int main(int argc, char* argv[]) {
             MPI_Recv(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD, &status);
         }
     }
+	
+	CollisionArray collisions;
 
-    // now everyone has the columns block array
-
-
-    CollisionArray collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
     if (proc_id == 0){
         debug("Finding collisions");
+    	collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
         print_collisions(collisions);
+        // send the collision array to all workers
+        for(int proc= 1; proc<num_procs; proc++){
+            MPI_Send(&collisions.length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
+            for (i=0; i<collisions.length; i++){
+                MPI_Send(&collisions.array[i].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
+                MPI_Send(collisions.array[i].columns, collisions.array[i].length, MPI_INT, proc, 2001, MPI_COMM_WORLD);
+                MPI_Send(&collisions.array[i].signature, 1, MPI_DOUBLE, proc, 2001, MPI_COMM_WORLD);
+                MPI_Send(&collisions.array[i].row_ids, 4, MPI_INT, proc, 2001, MPI_COMM_WORLD);
+            }
+        }
+    }
 
+    if (proc_id != 0){
+        // receive the collision array
+        MPI_Recv(&collisions.length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+		collisions.array= malloc(collisions.length * sizeof(Collision));
+        for (i=0; i<collisions.length; i++){
+            MPI_Recv(&collisions.array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+			collisions.array[i].columns = malloc(collisions.array[i].length * sizeof(int));
+            MPI_Recv(collisions.array[i].columns, collisions.array[i].length, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+            MPI_Recv(&collisions.array[i].signature, 1, MPI_DOUBLE, 0, 2001, MPI_COMM_WORLD, &status);
+            MPI_Recv(&collisions.array[i].row_ids, 4, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+        }
+    }
+
+    if (proc_id == 0){
         debug("Finding overlapping blocks");
         int total_merged_blocks = merge_overlapping_blocks(collisions);
 
