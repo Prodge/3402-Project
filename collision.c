@@ -126,7 +126,6 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
                 total_collisions += collisions[c_index].length;
             }
         }
-        printf("Total Collisions: %d\n", total_collisions);
         return merge_collisions(collisions, (num_procs - 1) * threads, total_collisions);
     }else{
 
