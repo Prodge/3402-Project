@@ -6,6 +6,15 @@ int main(int argc, char* argv[]) {
     MPI_Status status;
     BlockArray* columns_block_array;
 
+    // Initialize MPI
+    ierr = MPI_Init(&argc, &argv);
+
+    // get # of processes
+    ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+
+    // get induvidual proccess id
+    ierr = MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
+
     // create mpi struct for block
     int blocklengths[3] = {1, 4, 1};
     MPI_Datatype types[3] = {MPI_DOUBLE, MPI_INT, MPI_INT};
@@ -16,15 +25,6 @@ int main(int argc, char* argv[]) {
 
     // enable nested parallelization
     omp_set_nested(1);
-
-    // Initialize MPI
-    ierr = MPI_Init(&argc, &argv);
-
-    // get # of processes
-    ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
-
-    // get induvidual proccess id
-    ierr = MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
 
     printf("Checking arguments in process %d\n", proc_id);
     check_arguments(argc, argv);
