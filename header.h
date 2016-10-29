@@ -143,7 +143,7 @@ extern void check_arguments(int argc, char* argv[]);
 
 extern Match get_initial_match(int * row_ids, int * columns, int columns_length);
 
-extern int merge_overlapping_blocks(CollisionArray collisions);
+extern int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_procs);
 
 bool already_in_match_array(MatchArray match_array, int * row_ids, int row_ids_length);
 
