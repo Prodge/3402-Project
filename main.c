@@ -1,7 +1,7 @@
 #include "header.h"
 
 int main(int argc, char* argv[]) {
-    int proc_id, ierr, num_procs, start_row, end_row;
+    int proc_id, ierr, num_procs, start_row, end_row, i;
     int total = 0;
     MPI_Status status;
     BlockArray* columns_block_array;
@@ -35,6 +35,8 @@ int main(int argc, char* argv[]) {
 
     debug("Creating blocks for each column");
 
+    omp_set_nested(1);
+
     // if master
     if (proc_id == 0){
         // initialisze column block array
@@ -54,11 +56,15 @@ int main(int argc, char* argv[]) {
         start_row = (num_procs-1)*avg_rows_per_proc;
         end_row = (num_procs*avg_rows_per_proc) + columns % num_procs;
         printf("Proc %d recived %d --> %d\n", proc_id, start_row, end_row);
-
-        for (int i=start_row; i<end_row; i++){
-            columns_block_array[i] = create_blocks_for_column(matrix[i], rows, keys, i);
-            total += columns_block_array[i].length;
-            printf("Column %d has %d blocks\n", i, columns_block_array[i].length);
+        #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
+        {
+            #pragma omp for private(i)
+            for (i=start_row; i<end_row; i++){
+                columns_block_array[i] = create_blocks_for_column(matrix[i], rows, keys, i);
+                printf("Column %d has %d blocks\n", i, columns_block_array[i].length);
+                #pragma omp atomic
+                total += columns_block_array[i].length;
+            }
         }
 
         // get results from workers
@@ -81,7 +87,7 @@ int main(int argc, char* argv[]) {
         printf("Proc %d recived %d --> %d\n", proc_id, start_row, end_row);
 
         // do work and send work to master as it is done
-        for (int i=start_row; i<end_row; i++){
+        for (i=start_row; i<end_row; i++){
             BlockArray column_blocks = create_blocks_for_column(matrix[i], rows, keys, i);
             ierr = MPI_Send(&column_blocks.length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             ierr = MPI_Send(column_blocks.array, column_blocks.length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
