@@ -62,32 +62,6 @@ int remove_duplicates_and_print_overlapping_blocks(Match * overlapping_blocks_co
     return overlapping_matches_array.length;
 }
 
-/*returns total number of unique overlapping blocks and prints unique overlapping blocks*/
-MatchArray remove_duplicates_and_print_overlapping_blocks2(Match * overlapping_blocks_column, int length){
-    // Create and init match array
-    MatchArray overlapping_matches_array;
-    overlapping_matches_array.length = 0;
-    overlapping_matches_array.array = malloc(length * sizeof(Match));
-
-    // For each found match
-    for (int i=0; i<length; i++){
-        // If it is a match
-        if (overlapping_blocks_column[i].row_ids_length != -1 && overlapping_blocks_column[i].columns_length != -1){
-            // If match not already added to match array, add to array and print block
-            if (!already_in_match_array(overlapping_matches_array, overlapping_blocks_column[i].row_ids, overlapping_blocks_column[i].row_ids_length)){
-                overlapping_matches_array.array[overlapping_matches_array.length] = overlapping_blocks_column[i];
-                overlapping_matches_array.length++;
-            }
-        }
-    }
-
-    // Free unused memory
-    free(overlapping_blocks_column);
-	overlapping_matches_array.array = realloc(overlapping_matches_array.array, overlapping_matches_array.length * sizeof(Match));
-
-    return overlapping_matches_array;
-}
-
 /*returns number of overlapping blocks given collisions*/
 int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_procs){
 	MPI_Status status;
@@ -98,17 +72,17 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
 	if (proc_id == 0){
     	// Creates an array of matches for each collision
    		overlapping_blocks_column = malloc(collisions.length * sizeof(Match));
-		for (int i=0; i<(num_procs-1); i++){
+		for (int proc=1; proc<num_procs; proc++){
 			int length;
-        	MPI_Recv(&length, 1, MPI_INT, i+1, 2002, MPI_COMM_WORLD, &status);
-			for (int k=1; k<(length+1); k++){
-        		MPI_Recv(&overlapping_blocks_column[total].columns_length, 1, MPI_INT, i+1, 2002, MPI_COMM_WORLD, &status);
+        	MPI_Recv(&length, 1, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
+			for (int k=0; k<length; k++){
+        		MPI_Recv(&overlapping_blocks_column[total].columns_length, 1, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
 				overlapping_blocks_column[total].columns = malloc(sizeof(int) * overlapping_blocks_column[total].columns_length);
-        		MPI_Recv(overlapping_blocks_column[total].columns, overlapping_blocks_column[total].columns_length, MPI_INT, i+1, 2002, MPI_COMM_WORLD, &status);
-        		MPI_Recv(&overlapping_blocks_column[total].row_ids_length, 1, MPI_INT, i+1, 2002, MPI_COMM_WORLD, &status);
+        		MPI_Recv(overlapping_blocks_column[total].columns, overlapping_blocks_column[total].columns_length, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
+        		MPI_Recv(&overlapping_blocks_column[total].row_ids_length, 1, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
 				overlapping_blocks_column[total].row_ids = malloc(sizeof(int) * overlapping_blocks_column[total].row_ids_length);
-        		MPI_Recv(overlapping_blocks_column[total].row_ids, overlapping_blocks_column[total].row_ids_length, MPI_INT, i+1, 2002, MPI_COMM_WORLD, &status);
-				total += k;
+        		MPI_Recv(overlapping_blocks_column[total].row_ids, overlapping_blocks_column[total].row_ids_length, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
+				total++;
 			}
 		}
 		overlapping_blocks_column = realloc(overlapping_blocks_column, total * sizeof(Match));
@@ -156,6 +130,8 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
 					free(overlapping_match.columns);
 					overlapping_match.columns = columns.array;
 					overlapping_match.columns_length = columns.length;
+					#pragma omp critical
+					counter++;
 				}else{
 					// Remove unsed memory
 					free(overlapping_match.row_ids);
@@ -165,18 +141,17 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
 					overlapping_match.columns_length = -1;
 				}
 				// Add match to match array
-				overlapping_blocks_column[counter] = overlapping_match;
-				#pragma omp atmoic
-				counter++;
+				overlapping_blocks_column[end_row-start_match-1] = overlapping_match;
 			}
 		}
-    	MatchArray obc = remove_duplicates_and_print_overlapping_blocks2(overlapping_blocks_column, (end_row-start_row));
-        MPI_Send(&obc.length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-		for (int i=0; i<obc.length; i++){
-        	MPI_Send(&obc.array[i].columns_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-        	MPI_Send(obc.array[i].columns, obc.array[i].columns_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-        	MPI_Send(&obc.array[i].row_ids_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-        	MPI_Send(obc.array[i].row_ids, obc.array[i].row_ids_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
+        MPI_Send(&counter, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
+		for (int i=(end_row-start_row-1); i>-1; i--){
+			if (overlapping_blocks_column[i].columns_length != -1 && overlapping_blocks_column[i].row_ids_length != -1){
+        		MPI_Send(&overlapping_blocks_column[i].columns_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
+        		MPI_Send(overlapping_blocks_column[i].columns, overlapping_blocks_column[i].columns_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
+        		MPI_Send(&overlapping_blocks_column[i].row_ids_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
+        		MPI_Send(overlapping_blocks_column[i].row_ids, overlapping_blocks_column[i].row_ids_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
+			}
 		}
 		return -1;
 	}
