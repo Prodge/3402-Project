@@ -101,11 +101,10 @@ int main(int argc, char* argv[]) {
         }
     }
 	
-	CollisionArray collisions;
+	CollisionArray collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
 
     if (proc_id == 0){
         debug("Finding collisions");
-    	collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
         print_collisions(collisions);
         // send the collision array to all workers
         for(int proc= 1; proc<num_procs; proc++){
@@ -120,6 +119,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (proc_id != 0){
+		free(collisions.array);
         // receive the collision array
         MPI_Recv(&collisions.length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
 		collisions.array= malloc(collisions.length * sizeof(Collision));
