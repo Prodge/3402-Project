@@ -105,14 +105,17 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
     MPI_Status status;
 
 
+    // Master Node
     if(proc_id == 0){
         CollisionArray * collisions;
         collisions = malloc((num_procs - 1) * threads * sizeof(CollisionArray));
         int total_collisions = 0;
+        // Loop through all processes and receive their blocks
         for (int proc=0; proc<num_procs-1; proc++){
-            // Receive the number of collisions
+            // Each node will send an array for each thread
             for(int thread=0; thread<threads; thread++){
                 int c_index = (proc * threads) + thread;
+                // Receive the number of collisions for this thread
                 MPI_Recv(&collisions[c_index].length, 1, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
                 collisions[c_index].array = malloc(sizeof(Collision) * collisions[c_index].length);
                 for(int i=0; i<collisions[c_index].length; i++){
@@ -127,7 +130,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
             }
         }
         return merge_collisions(collisions, (num_procs - 1) * threads, total_collisions);
-    }else{
+
+    }else{ // Worker Nodes
 
         // Inits collision array for each thread
         CollisionArray * collisions;
@@ -140,6 +144,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
         int col;
         int total_collisions = 0;
         int factor = (columns + num_procs - 2) / (num_procs - 1);
+
+        // Work out the start and end columns for this node
         int start_col = (proc_id - 1) * factor;
         int end_col = proc_id * factor;
         if(end_col > columns){
@@ -171,8 +177,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
         }
 
         for(int thread=0; thread<threads; thread++){
+            // Send through each collision individually
             MPI_Send(&collisions[thread].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
-            // Send through each collision
             for(int i=0; i< collisions[thread].length; i++){
                 MPI_Send(&collisions[thread].array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
                 MPI_Send(collisions[thread].array[i].columns,  collisions[thread].array[i].length, MPI_INT, 0, 2001, MPI_COMM_WORLD);
