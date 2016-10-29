@@ -38,13 +38,12 @@ int main(int argc, char* argv[]) {
     omp_set_nested(1);
 	
 	int avg_rows_per_proc = columns / (num_procs-1);
-	columns = 499;
+
+    // initialisze column block array
+    columns_block_array = malloc(columns * sizeof(BlockArray));
 
     // if master
     if (proc_id == 0){
-        // initialisze column block array
-        columns_block_array = malloc(columns * sizeof(BlockArray));
-
         // get results from workers
         for(int proc= 1; proc<num_procs; proc++){
             start_row = (proc-1) * avg_rows_per_proc;
@@ -79,58 +78,43 @@ int main(int argc, char* argv[]) {
 		for (counter=0; counter<(end_row-start_row); counter++){
             ierr = MPI_Send(&worker_columns_block_array[counter].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             ierr = MPI_Send(worker_columns_block_array[counter].array, worker_columns_block_array[counter].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
+			free(worker_columns_block_array[counter].array);
 		}
+		free(worker_columns_block_array);
     }
 
+	MPI_Barrier(MPI_COMM_WORLD);
+	for (i=0; i<columns; i++){
+		MPI_Bcast(&columns_block_array[i].length, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		if (proc_id != 0){
+       		columns_block_array[i].array = malloc(columns_block_array[i].length * sizeof(Block));
+		}
+		MPI_Bcast(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, 0, MPI_COMM_WORLD);
+	}
 
-    if (proc_id == 0){
-        // send the columns block array to all workers
-        for(int proc= 1; proc<num_procs; proc++){
-            for (i=0; i<columns; i++){
-                MPI_Send(&columns_block_array[i].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
-                MPI_Send(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD);
-            }
-        }
-    }else{
-        // receive the columns block array
-        columns_block_array = malloc(columns * sizeof(BlockArray));
-        for (i=0; i<columns; i++){
-            MPI_Recv(&columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
-            columns_block_array[i].array = malloc(columns_block_array[i].length * sizeof(Block));
-            MPI_Recv(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD, &status);
-        }
-    }
-	
 	CollisionArray collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
 
     if (proc_id == 0){
         debug("Finding collisions");
         print_collisions(collisions);
-        // send the collision array to all workers
-        for(int proc= 1; proc<num_procs; proc++){
-            MPI_Send(&collisions.length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
-            for (i=0; i<collisions.length; i++){
-                MPI_Send(&collisions.array[i].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
-                MPI_Send(collisions.array[i].columns, collisions.array[i].length, MPI_INT, proc, 2001, MPI_COMM_WORLD);
-                MPI_Send(&collisions.array[i].signature, 1, MPI_DOUBLE, proc, 2001, MPI_COMM_WORLD);
-                MPI_Send(&collisions.array[i].row_ids, 4, MPI_INT, proc, 2001, MPI_COMM_WORLD);
-            }
-        }
     }
-
-    if (proc_id != 0){
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(&collisions.length, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	if (proc_id != 0){
 		free(collisions.array);
-        // receive the collision array
-        MPI_Recv(&collisions.length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
 		collisions.array= malloc(collisions.length * sizeof(Collision));
-        for (i=0; i<collisions.length; i++){
-            MPI_Recv(&collisions.array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+	for (i=0; i<collisions.length; i++){
+		MPI_Bcast(&collisions.array[i].length, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		if (proc_id != 0){
 			collisions.array[i].columns = malloc(collisions.array[i].length * sizeof(int));
-            MPI_Recv(collisions.array[i].columns, collisions.array[i].length, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
-            MPI_Recv(&collisions.array[i].signature, 1, MPI_DOUBLE, 0, 2001, MPI_COMM_WORLD, &status);
-            MPI_Recv(&collisions.array[i].row_ids, 4, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
-        }
-    }
+		}
+		MPI_Bcast(collisions.array[i].columns, collisions.array[i].length, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&collisions.array[i].signature, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&collisions.array[i].row_ids, 4, MPI_INT, 0, MPI_COMM_WORLD);
+	}
 
     int total_merged_blocks = merge_overlapping_blocks(collisions, proc_id, num_procs);
 
