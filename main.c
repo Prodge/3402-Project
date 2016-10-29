@@ -94,9 +94,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    CollisionArray collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
     if (proc_id == 0){
         debug("Finding collisions");
-        CollisionArray collisions = get_collisions(columns_block_array, columns);
         print_collisions(collisions);
 
         debug("Finding overlapping blocks");
