@@ -36,22 +36,14 @@ int main(int argc, char* argv[]) {
     debug("Creating blocks for each column");
 
     omp_set_nested(1);
+	
+	columns = 499;
+	int avg_rows_per_proc = columns / num_procs;
 
     // if master
     if (proc_id == 0){
-		columns = 499;
         // initialisze column block array
         columns_block_array = malloc(columns * sizeof(BlockArray));
-
-        int avg_rows_per_proc = columns / num_procs;
-
-        // distributes columns to child processes
-        for(int proc= 1; proc<num_procs; proc++){
-            start_row = (proc-1) * avg_rows_per_proc;
-            end_row = avg_rows_per_proc * proc;
-            ierr = MPI_Send( &start_row, 1 , MPI_INT, proc, 2000, MPI_COMM_WORLD);
-            ierr = MPI_Send( &end_row, 1 , MPI_INT, proc, 2000, MPI_COMM_WORLD);
-        }
 
         // do work on master
         start_row = (num_procs-1)*avg_rows_per_proc;
@@ -83,16 +75,27 @@ int main(int argc, char* argv[]) {
 
     }else{
         // get start and end rows for worker
-        ierr = MPI_Recv(&start_row, 1, MPI_INT, 0, 2000, MPI_COMM_WORLD, &status);
-        ierr = MPI_Recv(&end_row, 1, MPI_INT, 0, 2000, MPI_COMM_WORLD, &status);
-        printf("Proc %d recived %d --> %d\n", proc_id, start_row, end_row);
+        start_row = (proc_id-1) * avg_rows_per_proc;
+        end_row = avg_rows_per_proc * proc_id;
 
         // do work and send work to master as it is done
-        for (i=start_row; i<end_row; i++){
-            BlockArray column_blocks = create_blocks_for_column(matrix[i], rows, keys, i);
-            ierr = MPI_Send(&column_blocks.length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
-            ierr = MPI_Send(column_blocks.array, column_blocks.length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
+        BlockArray* worker_columns_block_array = malloc(avg_rows_per_proc * sizeof(BlockArray));
+		int counter = 0;
+        #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
+        {
+            #pragma omp for ordered schedule(dynamic) private(i)
+			for (i=start_row; i<end_row; i++){
+				#pragma omp ordered
+				worker_columns_block_array[counter] = create_blocks_for_column(matrix[i], rows, keys, i);
+				#pragma omp critical
+				counter++;
+			}
         }
+
+		for (counter=0; counter<avg_rows_per_proc; counter++){
+            ierr = MPI_Send(&worker_columns_block_array[counter].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
+            ierr = MPI_Send(worker_columns_block_array[counter].array, worker_columns_block_array[counter].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
+		}
     }
 
     if (proc_id == 0){
