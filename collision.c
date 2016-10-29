@@ -100,7 +100,7 @@ CollisionArray update_collision(CollisionArray col_array, Collision coll){
 }
 
 /*returns a unique CollisionArray of collisions*/
-CollisionArray get_collisions(BlockArray* column_blocks, int columns){
+CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_id, int num_procs){
     // Inits collision array for each thread
     CollisionArray * collisions;
     int threads = sysconf(_SC_NPROCESSORS_ONLN) * 3;

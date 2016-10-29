@@ -36,10 +36,10 @@ int main(int argc, char* argv[]) {
     debug("Creating blocks for each column");
 
     omp_set_nested(1);
+    columns = 499;
 
     // if master
     if (proc_id == 0){
-		columns = 499;
         // initialisze column block array
         columns_block_array = malloc(columns * sizeof(BlockArray));
 
@@ -95,9 +95,31 @@ int main(int argc, char* argv[]) {
         }
     }
 
+
+    if (proc_id == 0){
+        // send the columns block array to all workers
+        for(int proc= 1; proc<num_procs; proc++){
+            for (i=0; i<columns; i++){
+                MPI_Send(&columns_block_array[i].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
+                MPI_Send(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD);
+            }
+        }
+    }else{
+        // receive the columns block array
+        columns_block_array = malloc(columns * sizeof(BlockArray));
+        for (i=0; i<columns; i++){
+            MPI_Recv(&columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+            columns_block_array[i].array = malloc(columns_block_array[i].length * sizeof(Block));
+            MPI_Recv(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD, &status);
+        }
+    }
+
+    // now everyone has the columns block array
+
+
+    CollisionArray collisions = get_collisions(columns_block_array, columns, proc_id, num_procs);
     if (proc_id == 0){
         debug("Finding collisions");
-        CollisionArray collisions = get_collisions(columns_block_array, columns);
         print_collisions(collisions);
 
         debug("Finding overlapping blocks");

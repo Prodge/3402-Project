@@ -96,7 +96,7 @@ Collision get_colliding_blocks(Block block, BlockArray* blocks, int columns);
 
 bool is_new_signature(double signature, CollisionArray collisions);
 
-CollisionArray get_collisions(BlockArray* blocks, int columns);
+CollisionArray get_collisions(BlockArray* blocks, int columns, int proc_id, int num_procs);
 
 Collision* allocate_memory_for_collisions_if_needed(CollisionArray collosions);
 
