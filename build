@@ -6,4 +6,5 @@ make clean
 make
 echo done
 echo "   ---   ---   ---"
-time $BIN data/data.txt data/keys.txt
+syncCluster
+time mpirun --hostfile host $BIN data/data.txt data/keys.txt

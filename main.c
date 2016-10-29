@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
 
     // if master
     if (proc_id == 0){
+		columns = 499;
         // initialisze column block array
         columns_block_array = malloc(columns * sizeof(BlockArray));
 
