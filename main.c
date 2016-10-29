@@ -37,33 +37,17 @@ int main(int argc, char* argv[]) {
 
     omp_set_nested(1);
 	
-	columns = 499;
-	int avg_rows_per_proc = columns / num_procs;
+	int avg_rows_per_proc = columns / (num_procs-1);
 
     // if master
     if (proc_id == 0){
         // initialisze column block array
         columns_block_array = malloc(columns * sizeof(BlockArray));
 
-        // do work on master
-        start_row = (num_procs-1)*avg_rows_per_proc;
-        end_row = (num_procs*avg_rows_per_proc) + columns % num_procs;
-        printf("Proc %d recived %d --> %d\n", proc_id, start_row, end_row);
-        #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
-        {
-            #pragma omp for private(i)
-            for (i=start_row; i<end_row; i++){
-                columns_block_array[i] = create_blocks_for_column(matrix[i], rows, keys, i);
-                printf("Column %d has %d blocks\n", i, columns_block_array[i].length);
-                #pragma omp atomic
-                total += columns_block_array[i].length;
-            }
-        }
-
         // get results from workers
         for(int proc= 1; proc<num_procs; proc++){
             start_row = (proc-1) * avg_rows_per_proc;
-            end_row = avg_rows_per_proc * proc;
+        	end_row = (proc == (num_procs-1)) ? (avg_rows_per_proc*proc) + (columns % (num_procs-1)) : avg_rows_per_proc * proc;
             for (int j=start_row; j<end_row; j++){
                 ierr = MPI_Recv(&columns_block_array[j].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD, &status);
                 columns_block_array[j].array = malloc(columns_block_array[j].length * sizeof(Block));
@@ -72,14 +56,13 @@ int main(int argc, char* argv[]) {
                 total += columns_block_array[j].length;
             }
         }
-
     }else{
         // get start and end rows for worker
         start_row = (proc_id-1) * avg_rows_per_proc;
-        end_row = avg_rows_per_proc * proc_id;
+        end_row = (proc_id == (num_procs-1)) ? (avg_rows_per_proc*proc_id) + (columns % (num_procs-1)) : avg_rows_per_proc * proc_id;
 
         // do work and send work to master as it is done
-        BlockArray* worker_columns_block_array = malloc(avg_rows_per_proc * sizeof(BlockArray));
+        BlockArray* worker_columns_block_array = malloc((end_row-start_row) * sizeof(BlockArray));
 		int counter = 0;
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
@@ -92,7 +75,7 @@ int main(int argc, char* argv[]) {
 			}
         }
 
-		for (counter=0; counter<avg_rows_per_proc; counter++){
+		for (counter=0; counter<(end_row-start_row); counter++){
             ierr = MPI_Send(&worker_columns_block_array[counter].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             ierr = MPI_Send(worker_columns_block_array[counter].array, worker_columns_block_array[counter].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
 		}
