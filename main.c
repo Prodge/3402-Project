@@ -101,17 +101,17 @@ int main(int argc, char* argv[]) {
         for(int proc= 1; proc<num_procs; proc++){
             for (i=0; i<columns; i++){
                 MPI_Send(&columns_block_array[i].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD);
-                MPI_Send(columns_block_array[i].array, columns_block_array.length, mpi_block_type, proc, 2001, MPI_COMM_WORLD);
+                MPI_Send(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD);
             }
         }
     }else{
         // receive the columns block array
         columns_block_array = malloc(columns * sizeof(BlockArray));
-            for (i=0; i<columns; i++){
-                MPI_Recv(&columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
-                columns_block_array[i].array = malloc(columns_block_array[i].length * sizeof(Block));
-                MPI_Recv(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD, &status);
-            }
+        for (i=0; i<columns; i++){
+            MPI_Recv(&columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD, &status);
+            columns_block_array[i].array = malloc(columns_block_array[i].length * sizeof(Block));
+            MPI_Recv(columns_block_array[i].array, columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD, &status);
+        }
     }
 
     // now everyone has the columns block array
