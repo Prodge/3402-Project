@@ -101,44 +101,92 @@ CollisionArray update_collision(CollisionArray col_array, Collision coll){
 
 /*returns a unique CollisionArray of collisions*/
 CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_id, int num_procs){
-    // Inits collision array for each thread
-    CollisionArray * collisions;
-    int threads = sysconf(_SC_NPROCESSORS_ONLN) * 3;
-    collisions = malloc(threads * sizeof(CollisionArray));
-    for (int i=0; i<threads; i++){
-        collisions[i].length=0;
-        collisions[i].array = malloc(sizeof(Collision) * COLLISION_BASE_MEMORY_ALLOCATION);
-    }
+    int threads = sysconf(_SC_NPROCESSORS_ONLN);
+    MPI_Status status;
 
-    int total_collisions = 0; // Keeps track of total collisions found
-    int col; // Loop counter needs to be declared outside of openmp loop
 
-    #pragma omp parallel num_threads(threads)
-    {
-        #pragma omp for private(col)
-        for(col=0; col<(columns-1); col++){
-            int this_thread = omp_get_thread_num();
-            // For each block in column find matching signatures in other columns
-            for(int i=0; i<column_blocks[col].length; i++){
-                if (is_new_signature(column_blocks[col].array[i].signature, collisions[this_thread])){
-                    Collision collision = get_colliding_blocks(column_blocks[col].array[i], column_blocks, columns);
-                    if (collision.length > 1){
-                        #pragma omp critical
-                        collisions[this_thread] = update_collision(collisions[this_thread], collision);
+    // Master Node
+    if(proc_id == 0){
+        CollisionArray * collisions;
+        collisions = malloc((num_procs - 1) * threads * sizeof(CollisionArray));
+        int total_collisions = 0;
+        // Loop through all processes and receive their blocks
+        for (int proc=0; proc<num_procs-1; proc++){
+            // Each node will send an array for each thread
+            for(int thread=0; thread<threads; thread++){
+                int c_index = (proc * threads) + thread;
+                // Receive the number of collisions for this thread
+                MPI_Recv(&collisions[c_index].length, 1, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
+                collisions[c_index].array = malloc(sizeof(Collision) * collisions[c_index].length);
+                for(int i=0; i<collisions[c_index].length; i++){
+                    // Receive each collision
+                    MPI_Recv(&collisions[c_index].array[i].length, 1, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
+                    collisions[c_index].array[i].columns = malloc(sizeof(int) * collisions[c_index].array[i].length);
+                    MPI_Recv(collisions[c_index].array[i].columns, collisions[c_index].array[i].length, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&collisions[c_index].array[i].row_ids, 4, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&collisions[c_index].array[i].signature, 1, MPI_DOUBLE, proc+1, 2001, MPI_COMM_WORLD, &status);
+                }
+                total_collisions += collisions[c_index].length;
+            }
+        }
+        return merge_collisions(collisions, (num_procs - 1) * threads, total_collisions);
 
-                        #pragma omp critical
-                        total_collisions += collision.length;
+    }else{ // Worker Nodes
 
-                    }else{
-                        free(collision.columns);
+        // Inits collision array for each thread
+        CollisionArray * collisions;
+        collisions = malloc(threads * sizeof(CollisionArray));
+        for (int i=0; i<threads; i++){
+            collisions[i].length=0;
+            collisions[i].array = malloc(sizeof(Collision) * COLLISION_BASE_MEMORY_ALLOCATION);
+        }
+
+        int col;
+        int total_collisions = 0;
+        int factor = (columns + num_procs - 2) / (num_procs - 1);
+
+        // Work out the start and end columns for this node
+        int start_col = (proc_id - 1) * factor;
+        int end_col = proc_id * factor;
+        if(end_col > columns){
+            end_col = columns;
+        }
+
+        #pragma omp parallel num_threads(threads)
+        {
+            #pragma omp for private(col)
+            for(col=start_col; col<end_col; col++){
+                int this_thread = omp_get_thread_num();
+                // For each block in column find matching signatures in other columns
+                for(int i=0; i<column_blocks[col].length; i++){
+                    if (is_new_signature(column_blocks[col].array[i].signature, collisions[this_thread])){
+                        Collision collision = get_colliding_blocks(column_blocks[col].array[i], column_blocks, columns);
+                        if (collision.length > 1){
+                            #pragma omp critical
+                            collisions[this_thread] = update_collision(collisions[this_thread], collision);
+
+                            #pragma omp critical
+                            total_collisions += collision.length;
+
+                        }else{
+                            free(collision.columns);
+                        }
                     }
                 }
             }
-
-            printf("Finished column %d\n", col);
         }
-    }
 
-    // Merges the collision arrays from each column into 1 array, removing any duplicates
-    return merge_collisions(collisions, threads, total_collisions);
+        for(int thread=0; thread<threads; thread++){
+            // Send through each collision individually
+            MPI_Send(&collisions[thread].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
+            for(int i=0; i< collisions[thread].length; i++){
+                MPI_Send(&collisions[thread].array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
+                MPI_Send(collisions[thread].array[i].columns,  collisions[thread].array[i].length, MPI_INT, 0, 2001, MPI_COMM_WORLD);
+                MPI_Send(&collisions[thread].array[i].row_ids, 4, MPI_INT, 0, 2001, MPI_COMM_WORLD);
+                MPI_Send(&collisions[thread].array[i].signature, 1, MPI_DOUBLE, 0, 2001, MPI_COMM_WORLD);
+            }
+        }
+        // Returning arbitrary data, The results from the worker threads are not used
+        return collisions[0];
+    }
 }
