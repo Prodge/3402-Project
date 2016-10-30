@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 
     // get induvidual proccess id
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
-
+	
     // create mpi struct for block
     int blocklengths[3] = {1, 4, 1};
     MPI_Datatype types[3] = {MPI_DOUBLE, MPI_INT, MPI_INT};
@@ -37,27 +37,29 @@ int main(int argc, char* argv[]) {
     double* keys = read_keys(get_keys_filename(argc, argv));
 
     // initialisze column block array
+	columns = 499;
     columns_block_array = malloc(columns * sizeof(BlockArray));
-    int avg_rows_per_proc = columns / (num_procs-1);
+	int columns_per_worker = columns / (num_procs-1);
+	int remaining_columns = columns % (num_procs-1);
 
     if (proc_id == 0){
         // get results from workers
         for(int proc= 1; proc<num_procs; proc++){
-            start_row = (proc-1) * avg_rows_per_proc;
-            end_row = (proc == (num_procs-1)) ? (avg_rows_per_proc*proc) + (columns % (num_procs-1)) : avg_rows_per_proc * proc;
+			start_row = (proc-1) < remaining_columns && proc != 1 ?  ((proc-1) * columns_per_worker) + (proc-1) : proc == 1 ? (proc-1) * columns_per_worker : ((proc-1) * columns_per_worker) + remaining_columns;
+			end_row = (proc-1) < remaining_columns ? (columns_per_worker * proc) + proc : (columns_per_worker * proc) + remaining_columns;
             for (int j=start_row; j<end_row; j++){
                 ierr = MPI_Recv(&columns_block_array[j].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD, &status);
                 columns_block_array[j].array = malloc(columns_block_array[j].length * sizeof(Block));
                 ierr = MPI_Recv(columns_block_array[j].array, columns_block_array[j].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD, &status);
-                printf("Column %d has %d blocks\n", j, columns_block_array[j].length);
+                //printf("Column %d has %d blocks\n", j, columns_block_array[j].length);
                 total += columns_block_array[j].length;
             }
         }
     }else{
-        printf("Creating blocks for column in process %d\n", proc_id);
-        // get start and end rows for worker
-        start_row = (proc_id-1) * avg_rows_per_proc;
-        end_row = (proc_id == (num_procs-1)) ? (avg_rows_per_proc*proc_id) + (columns % (num_procs-1)) : avg_rows_per_proc * proc_id;
+		start_row = (proc_id-1) < remaining_columns && proc_id != 1 ?  ((proc_id-1) * columns_per_worker) + (proc_id-1) : proc_id == 1 ? (proc_id-1) * columns_per_worker : ((proc_id-1) * columns_per_worker) + remaining_columns;
+		end_row = (proc_id-1) < remaining_columns ? (columns_per_worker * proc_id) + proc_id : (columns_per_worker * proc_id) + remaining_columns;
+		
+		printf("Proc %d has %d --> %d\n", proc_id, start_row, end_row);
 
         // create blocks
         BlockArray* worker_columns_block_array = malloc((end_row-start_row) * sizeof(BlockArray));

@@ -67,7 +67,8 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
     MPI_Status status;
     Match * overlapping_blocks_column;
     int total = 0;
-    int avg_rows_per_proc = collisions.length / (num_procs-1);
+	int columns_per_worker = collisions.length / (num_procs-1);
+	int remaining_columns = collisions.length % (num_procs-1);
 
     if (proc_id == 0){
         overlapping_blocks_column = malloc(collisions.length * sizeof(Match));
@@ -88,8 +89,8 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
         overlapping_blocks_column = realloc(overlapping_blocks_column, total * sizeof(Match));
     }else{
         // get start and end rows for worker
-        int start_row = (proc_id-1) * avg_rows_per_proc;
-        int end_row = (proc_id == (num_procs-1)) ? (avg_rows_per_proc*proc_id) + (collisions.length % (num_procs-1)) : avg_rows_per_proc * proc_id;
+		int start_row = (proc_id-1) < remaining_columns && proc_id != 1 ?  ((proc_id-1) * columns_per_worker) + (proc_id-1) : proc_id == 1 ? (proc_id-1) * columns_per_worker : ((proc_id-1) * columns_per_worker) + remaining_columns;
+		int end_row = (proc_id-1) < remaining_columns ? (columns_per_worker * proc_id) + proc_id : (columns_per_worker * proc_id) + remaining_columns;
 
         overlapping_blocks_column = malloc((end_row-start_row) * sizeof(Match));
 

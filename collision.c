@@ -104,6 +104,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
     int threads = sysconf(_SC_NPROCESSORS_ONLN);
     MPI_Status status;
 
+	int columns_per_worker = columns / (num_procs-1);
+	int remaining_columns = columns % (num_procs-1);
 
     // Master Node
     if(proc_id == 0){
@@ -143,14 +145,10 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
 
         int col;
         int total_collisions = 0;
-        int factor = (columns + num_procs - 2) / (num_procs - 1);
 
         // Work out the start and end columns for this node
-        int start_col = (proc_id - 1) * factor;
-        int end_col = proc_id * factor;
-        if(end_col > columns){
-            end_col = columns;
-        }
+		int start_col = (proc_id-1) < remaining_columns && proc_id != 1 ?  ((proc_id-1) * columns_per_worker) + (proc_id-1) : proc_id == 1 ? (proc_id-1) * columns_per_worker : ((proc_id-1) * columns_per_worker) + remaining_columns;
+		int end_col = (proc_id-1) < remaining_columns ? (columns_per_worker * proc_id) + proc_id : (columns_per_worker * proc_id) + remaining_columns;
 
         #pragma omp parallel num_threads(threads)
         {
