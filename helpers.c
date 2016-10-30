@@ -113,7 +113,8 @@ Int1DArray get_unique_array(int * array, int array_length){
     return new_array;
 }
 
-int* get_start_and_end_chunk(int proc_id, int num_procs, int total_work){
+/*returns start and end work*/
+int* get_work_division(int proc_id, int num_procs, int total_work){
     int* work = malloc(2 * sizeof(int));
     int work_per_worker = total_work / (num_procs-1);
     int remaining_work = total_work % (num_procs-1);

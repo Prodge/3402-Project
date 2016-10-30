@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
     int proc_id, ierr, num_procs, i;
-    int* work_division = malloc(2 * sizeof(int));
+    int* work_division;
     int total = 0;
     MPI_Status status;
     BlockArray* columns_block_array;
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     if (proc_id == 0){
         // get results from workers
         for(int proc= 1; proc<num_procs; proc++){
-            work_division = get_start_and_end_chunk(proc, num_procs, columns);
+            work_division = get_work_division(proc, num_procs, columns);
             for (int j=work_division[0]; j<work_division[1]; j++){
                 ierr = MPI_Recv(&columns_block_array[j].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD, &status);
                 columns_block_array[j].array = malloc(columns_block_array[j].length * sizeof(Block));
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
         }
     }else{
         // get work division
-        work_division = get_start_and_end_chunk(proc_id, num_procs, columns);
+        work_division = get_work_division(proc_id, num_procs, columns);
 
         // create blocks
         BlockArray* worker_columns_block_array = malloc((work_division[1]-work_division[0]) * sizeof(BlockArray));

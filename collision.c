@@ -143,9 +143,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
         int col;
         int total_collisions = 0;
 
-        // Work out the start and end columns for this node
-        int* work_division = malloc(2 * sizeof(int));
-        work_division = get_start_and_end_chunk(proc_id, num_procs, columns);
+        // get work division
+        int* work_division = get_work_division(proc_id, num_procs, columns);
 
         #pragma omp parallel num_threads(threads)
         {

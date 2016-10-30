@@ -86,9 +86,8 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
         }
         overlapping_blocks_column = realloc(overlapping_blocks_column, total * sizeof(Match));
     }else{
-        // get start and end rows for worker
-        int* work_division = malloc(2 * sizeof(int));
-        work_division = get_start_and_end_chunk(proc_id, num_procs, collisions.length);
+        // get work division
+        int* work_division = get_work_division(proc_id, num_procs, collisions.length);
 
         overlapping_blocks_column = malloc((work_division[1]-work_division[0]) * sizeof(Match));
 
