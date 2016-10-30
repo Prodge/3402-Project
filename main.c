@@ -1,7 +1,8 @@
 #include "header.h"
 
 int main(int argc, char* argv[]) {
-    int proc_id, ierr, num_procs, start_row, end_row, i;
+    int proc_id, ierr, num_procs, i;
+    int* work_division;
     int total = 0;
     MPI_Status status;
     BlockArray* columns_block_array;
@@ -38,14 +39,12 @@ int main(int argc, char* argv[]) {
 
     // initialisze column block array
     columns_block_array = malloc(columns * sizeof(BlockArray));
-    int avg_rows_per_proc = columns / (num_procs-1);
 
     if (proc_id == 0){
         // get results from workers
         for(int proc= 1; proc<num_procs; proc++){
-            start_row = (proc-1) * avg_rows_per_proc;
-            end_row = (proc == (num_procs-1)) ? (avg_rows_per_proc*proc) + (columns % (num_procs-1)) : avg_rows_per_proc * proc;
-            for (int j=start_row; j<end_row; j++){
+            work_division = get_work_division(proc, num_procs, columns);
+            for (int j=work_division[0]; j<work_division[1]; j++){
                 ierr = MPI_Recv(&columns_block_array[j].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD, &status);
                 columns_block_array[j].array = malloc(columns_block_array[j].length * sizeof(Block));
                 ierr = MPI_Recv(columns_block_array[j].array, columns_block_array[j].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD, &status);
@@ -54,24 +53,22 @@ int main(int argc, char* argv[]) {
             }
         }
     }else{
-        printf("Creating blocks for column in process %d\n", proc_id);
-        // get start and end rows for worker
-        start_row = (proc_id-1) * avg_rows_per_proc;
-        end_row = (proc_id == (num_procs-1)) ? (avg_rows_per_proc*proc_id) + (columns % (num_procs-1)) : avg_rows_per_proc * proc_id;
+        // get work division
+        work_division = get_work_division(proc_id, num_procs, columns);
 
         // create blocks
-        BlockArray* worker_columns_block_array = malloc((end_row-start_row) * sizeof(BlockArray));
+        BlockArray* worker_columns_block_array = malloc((work_division[1]-work_division[0]) * sizeof(BlockArray));
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
             #pragma omp for ordered schedule(dynamic) private(i)
-            for (i=0; i<(end_row-start_row); i++){
+            for (i=0; i<(work_division[1]-work_division[0]); i++){
                 #pragma omp ordered
-                worker_columns_block_array[i] = create_blocks_for_column(matrix[i+start_row], rows, keys, i+start_row);
+                worker_columns_block_array[i] = create_blocks_for_column(matrix[i+work_division[0]], rows, keys, i+work_division[0]);
             }
         }
 
         // send blocks to master
-        for (i=0; i<(end_row-start_row); i++){
+        for (i=0; i<(work_division[1]-work_division[0]); i++){
             ierr = MPI_Send(&worker_columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             ierr = MPI_Send(worker_columns_block_array[i].array, worker_columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
             free(worker_columns_block_array[i].array);

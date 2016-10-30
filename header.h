@@ -87,6 +87,7 @@ extern int get_number_of_repeated_elements(int row1[], int row1_size, int row2[]
 
 extern Int1DArray get_unique_array(int * array, int array_length);
 
+extern int* get_work_division(int proc_id, int num_procs, int total_work);
 
 /*
  *  collision.c

@@ -112,3 +112,20 @@ Int1DArray get_unique_array(int * array, int array_length){
     new_array.array = realloc(new_array.array, new_array.length * sizeof(int));
     return new_array;
 }
+
+/*returns start and end work*/
+int* get_work_division(int proc_id, int num_procs, int total_work){
+    int* work = malloc(2 * sizeof(int));
+    int work_per_worker = total_work / (num_procs-1);
+    int remaining_work = total_work % (num_procs-1);
+    // if the previous worker was within the remaning column range then include that in the start otherwise
+    if ((proc_id-1) < remaining_work && proc_id != 1){
+        work[0] = ((proc_id-1) * work_per_worker) + (proc_id-1);
+    }else{
+        // if its the first worker then starts with 0 otherwise start is expected work + remaining work
+        work[0] = proc_id == 1 ? 0 : ((proc_id-1) * work_per_worker) + remaining_work;
+    }
+    // if the worker is within the remaining work then add the worker number to the expected work end otherwsie add the remaining work to the expected work
+    work[1] = (proc_id-1) < remaining_work ? (work_per_worker * proc_id) + proc_id : (work_per_worker * proc_id) + remaining_work;
+    return work;
+}

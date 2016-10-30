@@ -67,7 +67,6 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
     MPI_Status status;
     Match * overlapping_blocks_column;
     int total = 0;
-    int avg_rows_per_proc = collisions.length / (num_procs-1);
 
     if (proc_id == 0){
         overlapping_blocks_column = malloc(collisions.length * sizeof(Match));
@@ -87,30 +86,29 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
         }
         overlapping_blocks_column = realloc(overlapping_blocks_column, total * sizeof(Match));
     }else{
-        // get start and end rows for worker
-        int start_row = (proc_id-1) * avg_rows_per_proc;
-        int end_row = (proc_id == (num_procs-1)) ? (avg_rows_per_proc*proc_id) + (collisions.length % (num_procs-1)) : avg_rows_per_proc * proc_id;
+        // get work division
+        int* work_division = get_work_division(proc_id, num_procs, collisions.length);
 
-        overlapping_blocks_column = malloc((end_row-start_row) * sizeof(Match));
+        overlapping_blocks_column = malloc((work_division[1]-work_division[0]) * sizeof(Match));
 
         int start_match; // Loop counter needs to be declared outside of openmp loop
         int counter = 0;
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
             #pragma omp for private(start_match)
-            for (start_match=0; start_match<(end_row-start_row); start_match++){
+            for (start_match=0; start_match<(work_division[1]-work_division[0]); start_match++){
                 // Creates inital match
-                Match overlapping_match = get_initial_match(collisions.array[start_match+start_row].row_ids, collisions.array[start_match+start_row].columns, collisions.array[start_match+start_row].length);
+                Match overlapping_match = get_initial_match(collisions.array[start_match+work_division[0]].row_ids, collisions.array[start_match+work_division[0]].columns, collisions.array[start_match+work_division[0]].length);
                     // From the next collision in the collision array
-                    for (int other_match=(start_match+start_row+1); other_match<collisions.length; other_match++){
+                    for (int other_match=(start_match+work_division[0]+1); other_match<collisions.length; other_match++){
                     // If the columns in each collision match and there are overlaps in row_ids then
                     // store row_ids in the match
-                    if (collisions.array[start_match+start_row].length == collisions.array[other_match].length &&
+                    if (collisions.array[start_match+work_division[0]].length == collisions.array[other_match].length &&
                         get_number_of_repeated_elements(
-                            collisions.array[start_match+start_row].columns, collisions.array[start_match+start_row].length,
+                            collisions.array[start_match+work_division[0]].columns, collisions.array[start_match+work_division[0]].length,
                             collisions.array[other_match].columns, collisions.array[other_match].length
-                        ) == collisions.array[start_match+start_row].length &&
-                        get_number_of_repeated_elements(collisions.array[start_match+start_row].row_ids, 4, collisions.array[other_match].row_ids, 4) >= 2
+                        ) == collisions.array[start_match+work_division[0]].length &&
+                        get_number_of_repeated_elements(collisions.array[start_match+work_division[0]].row_ids, 4, collisions.array[other_match].row_ids, 4) >= 2
                     ){
                         overlapping_match.row_ids = realloc(overlapping_match.row_ids, (overlapping_match.row_ids_length + 4) * sizeof(int));
                         for (int a=0; a<4; a++){
@@ -145,7 +143,7 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
             }
         }
         MPI_Send(&counter, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-        for (int i=0; i<(end_row-start_row); i++){
+        for (int i=0; i<(work_division[1]-work_division[0]); i++){
             if (overlapping_blocks_column[i].columns_length != -1 && overlapping_blocks_column[i].row_ids_length != -1){
                 MPI_Send(&overlapping_blocks_column[i].columns_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
                 MPI_Send(overlapping_blocks_column[i].columns, overlapping_blocks_column[i].columns_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
