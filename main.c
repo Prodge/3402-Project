@@ -1,7 +1,8 @@
 #include "header.h"
 
 int main(int argc, char* argv[]) {
-    int proc_id, ierr, num_procs, start_row, end_row, i;
+    int proc_id, ierr, num_procs, i;
+    int* work_division = malloc(2 * sizeof(int));
     int total = 0;
     MPI_Status status;
     BlockArray* columns_block_array;
@@ -14,7 +15,7 @@ int main(int argc, char* argv[]) {
 
     // get induvidual proccess id
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
-	
+
     // create mpi struct for block
     int blocklengths[3] = {1, 4, 1};
     MPI_Datatype types[3] = {MPI_DOUBLE, MPI_INT, MPI_INT};
@@ -37,43 +38,37 @@ int main(int argc, char* argv[]) {
     double* keys = read_keys(get_keys_filename(argc, argv));
 
     // initialisze column block array
-	columns = 499;
     columns_block_array = malloc(columns * sizeof(BlockArray));
-	int columns_per_worker = columns / (num_procs-1);
-	int remaining_columns = columns % (num_procs-1);
 
     if (proc_id == 0){
         // get results from workers
         for(int proc= 1; proc<num_procs; proc++){
-			start_row = (proc-1) < remaining_columns && proc != 1 ?  ((proc-1) * columns_per_worker) + (proc-1) : proc == 1 ? (proc-1) * columns_per_worker : ((proc-1) * columns_per_worker) + remaining_columns;
-			end_row = (proc-1) < remaining_columns ? (columns_per_worker * proc) + proc : (columns_per_worker * proc) + remaining_columns;
-            for (int j=start_row; j<end_row; j++){
+            work_division = get_start_and_end_chunk(proc, num_procs, columns);
+            for (int j=work_division[0]; j<work_division[1]; j++){
                 ierr = MPI_Recv(&columns_block_array[j].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD, &status);
                 columns_block_array[j].array = malloc(columns_block_array[j].length * sizeof(Block));
                 ierr = MPI_Recv(columns_block_array[j].array, columns_block_array[j].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD, &status);
-                //printf("Column %d has %d blocks\n", j, columns_block_array[j].length);
+                printf("Column %d has %d blocks\n", j, columns_block_array[j].length);
                 total += columns_block_array[j].length;
             }
         }
     }else{
-		start_row = (proc_id-1) < remaining_columns && proc_id != 1 ?  ((proc_id-1) * columns_per_worker) + (proc_id-1) : proc_id == 1 ? (proc_id-1) * columns_per_worker : ((proc_id-1) * columns_per_worker) + remaining_columns;
-		end_row = (proc_id-1) < remaining_columns ? (columns_per_worker * proc_id) + proc_id : (columns_per_worker * proc_id) + remaining_columns;
-		
-		printf("Proc %d has %d --> %d\n", proc_id, start_row, end_row);
+        // get work division
+        work_division = get_start_and_end_chunk(proc_id, num_procs, columns);
 
         // create blocks
-        BlockArray* worker_columns_block_array = malloc((end_row-start_row) * sizeof(BlockArray));
+        BlockArray* worker_columns_block_array = malloc((work_division[1]-work_division[0]) * sizeof(BlockArray));
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
             #pragma omp for ordered schedule(dynamic) private(i)
-            for (i=0; i<(end_row-start_row); i++){
+            for (i=0; i<(work_division[1]-work_division[0]); i++){
                 #pragma omp ordered
-                worker_columns_block_array[i] = create_blocks_for_column(matrix[i+start_row], rows, keys, i+start_row);
+                worker_columns_block_array[i] = create_blocks_for_column(matrix[i+work_division[0]], rows, keys, i+work_division[0]);
             }
         }
 
         // send blocks to master
-        for (i=0; i<(end_row-start_row); i++){
+        for (i=0; i<(work_division[1]-work_division[0]); i++){
             ierr = MPI_Send(&worker_columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             ierr = MPI_Send(worker_columns_block_array[i].array, worker_columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
             free(worker_columns_block_array[i].array);

@@ -104,9 +104,6 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
     int threads = sysconf(_SC_NPROCESSORS_ONLN);
     MPI_Status status;
 
-	int columns_per_worker = columns / (num_procs-1);
-	int remaining_columns = columns % (num_procs-1);
-
     // Master Node
     if(proc_id == 0){
         CollisionArray * collisions;
@@ -147,13 +144,13 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
         int total_collisions = 0;
 
         // Work out the start and end columns for this node
-		int start_col = (proc_id-1) < remaining_columns && proc_id != 1 ?  ((proc_id-1) * columns_per_worker) + (proc_id-1) : proc_id == 1 ? (proc_id-1) * columns_per_worker : ((proc_id-1) * columns_per_worker) + remaining_columns;
-		int end_col = (proc_id-1) < remaining_columns ? (columns_per_worker * proc_id) + proc_id : (columns_per_worker * proc_id) + remaining_columns;
+        int* work_division = malloc(2 * sizeof(int));
+        work_division = get_start_and_end_chunk(proc_id, num_procs, columns);
 
         #pragma omp parallel num_threads(threads)
         {
             #pragma omp for private(col)
-            for(col=start_col; col<end_col; col++){
+            for(col=work_division[0]; col<work_division[1]; col++){
                 int this_thread = omp_get_thread_num();
                 // For each block in column find matching signatures in other columns
                 for(int i=0; i<column_blocks[col].length; i++){
