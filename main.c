@@ -61,23 +61,20 @@ int main(int argc, char* argv[]) {
 
         // create blocks
         BlockArray* worker_columns_block_array = malloc((end_row-start_row) * sizeof(BlockArray));
-        int counter = 0;
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
             #pragma omp for ordered schedule(dynamic) private(i)
-            for (i=start_row; i<end_row; i++){
+            for (i=0; i<(end_row-start_row); i++){
                 #pragma omp ordered
-                worker_columns_block_array[counter] = create_blocks_for_column(matrix[i], rows, keys, i);
-                #pragma omp critical
-                counter++;
+                worker_columns_block_array[i] = create_blocks_for_column(matrix[i+start_row], rows, keys, i+start_row);
             }
         }
 
         // send blocks to master
-        for (counter=0; counter<(end_row-start_row); counter++){
-            ierr = MPI_Send(&worker_columns_block_array[counter].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
-            ierr = MPI_Send(worker_columns_block_array[counter].array, worker_columns_block_array[counter].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
-            free(worker_columns_block_array[counter].array);
+        for (i=0; i<(end_row-start_row); i++){
+            ierr = MPI_Send(&worker_columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
+            ierr = MPI_Send(worker_columns_block_array[i].array, worker_columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
+            free(worker_columns_block_array[i].array);
         }
         free(worker_columns_block_array);
     }

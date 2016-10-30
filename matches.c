@@ -98,19 +98,19 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
             #pragma omp for private(start_match)
-            for (start_match=start_row; start_match<end_row; start_match++){
+            for (start_match=0; start_match<(end_row-start_row); start_match++){
                 // Creates inital match
-                Match overlapping_match = get_initial_match(collisions.array[start_match].row_ids, collisions.array[start_match].columns, collisions.array[start_match].length);
+                Match overlapping_match = get_initial_match(collisions.array[start_match+start_row].row_ids, collisions.array[start_match+start_row].columns, collisions.array[start_match+start_row].length);
                     // From the next collision in the collision array
-                    for (int other_match=(start_match+1); other_match<collisions.length; other_match++){
+                    for (int other_match=(start_match+start_row+1); other_match<collisions.length; other_match++){
                     // If the columns in each collision match and there are overlaps in row_ids then
                     // store row_ids in the match
-                    if (collisions.array[start_match].length == collisions.array[other_match].length &&
+                    if (collisions.array[start_match+start_row].length == collisions.array[other_match].length &&
                         get_number_of_repeated_elements(
-                            collisions.array[start_match].columns, collisions.array[start_match].length,
+                            collisions.array[start_match+start_row].columns, collisions.array[start_match+start_row].length,
                             collisions.array[other_match].columns, collisions.array[other_match].length
-                        ) == collisions.array[start_match].length &&
-                        get_number_of_repeated_elements(collisions.array[start_match].row_ids, 4, collisions.array[other_match].row_ids, 4) >= 2
+                        ) == collisions.array[start_match+start_row].length &&
+                        get_number_of_repeated_elements(collisions.array[start_match+start_row].row_ids, 4, collisions.array[other_match].row_ids, 4) >= 2
                     ){
                         overlapping_match.row_ids = realloc(overlapping_match.row_ids, (overlapping_match.row_ids_length + 4) * sizeof(int));
                         for (int a=0; a<4; a++){
@@ -141,11 +141,11 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
                     overlapping_match.columns_length = -1;
                 }
                 // Add match to match array
-                overlapping_blocks_column[end_row-start_match-1] = overlapping_match;
+                overlapping_blocks_column[start_match] = overlapping_match;
             }
         }
         MPI_Send(&counter, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-        for (int i=(end_row-start_row-1); i>-1; i--){
+        for (int i=0; i<(end_row-start_row); i++){
             if (overlapping_blocks_column[i].columns_length != -1 && overlapping_blocks_column[i].row_ids_length != -1){
                 MPI_Send(&overlapping_blocks_column[i].columns_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
                 MPI_Send(overlapping_blocks_column[i].columns, overlapping_blocks_column[i].columns_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
