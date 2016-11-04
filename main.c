@@ -45,8 +45,7 @@ int main(int argc, char* argv[]) {
         for(int proc= 1; proc<num_procs; proc++){
             work_division = get_work_division(proc, num_procs, columns);
             for (int j=work_division[0]; j<work_division[1]; j++){
-                MPI_Probe(proc, 2001, MPI_COMM_WORLD, &status)
-                MPI_Get_count(&status, MPI_INT, &columns_block_array[j].length)
+                ierr = MPI_Recv(&columns_block_array[j].length, 1, MPI_INT, proc, 2001, MPI_COMM_WORLD, &status);
                 columns_block_array[j].array = malloc(columns_block_array[j].length * sizeof(Block));
                 ierr = MPI_Recv(columns_block_array[j].array, columns_block_array[j].length, mpi_block_type, proc, 2001, MPI_COMM_WORLD, &status);
                 printf("Column %d has %d blocks\n", j, columns_block_array[j].length);
@@ -70,6 +69,7 @@ int main(int argc, char* argv[]) {
 
         // send blocks to master
         for (i=0; i<(work_division[1]-work_division[0]); i++){
+            ierr = MPI_Send(&worker_columns_block_array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             ierr = MPI_Send(worker_columns_block_array[i].array, worker_columns_block_array[i].length, mpi_block_type, 0, 2001, MPI_COMM_WORLD);
             free(worker_columns_block_array[i].array);
         }

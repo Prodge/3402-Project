@@ -119,8 +119,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
                 collisions[c_index].array = malloc(sizeof(Collision) * collisions[c_index].length);
                 for(int i=0; i<collisions[c_index].length; i++){
                     // Receive each collision
-                    MPI_Probe(proc+1, 2001, MPI_COMM_WORLD, &status)
-                    MPI_Get_count(&status, MPI_INT, &collisions[c_index].array[i].length)
+                    MPI_Probe(proc+1, 2001, MPI_COMM_WORLD, &status);
+                    MPI_Get_count(&status, MPI_INT, &collisions[c_index].array[i].length);
                     collisions[c_index].array[i].columns = malloc(sizeof(int) * collisions[c_index].array[i].length);
                     MPI_Recv(collisions[c_index].array[i].columns, collisions[c_index].array[i].length, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
                     MPI_Recv(&collisions[c_index].array[i].row_ids, 4, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
