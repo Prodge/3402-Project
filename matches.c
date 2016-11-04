@@ -97,6 +97,7 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
         int counter = 0;
         #pragma omp parallel num_threads(sysconf(_SC_NPROCESSORS_ONLN))
         {
+            // For each assigned columns
             #pragma omp for private(start_match)
             for (start_match=0; start_match<(work_division[1]-work_division[0]); start_match++){
                 // Creates inital match
@@ -144,6 +145,7 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
                 overlapping_blocks_column[start_match] = overlapping_match;
             }
         }
+        // Send found matches to master
         MPI_Send(&counter, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
         for (int i=0; i<(work_division[1]-work_division[0]); i++){
             if (overlapping_blocks_column[i].columns_length != -1 && overlapping_blocks_column[i].row_ids_length != -1){
