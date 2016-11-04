@@ -75,10 +75,12 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
             int length;
             MPI_Recv(&length, 1, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
             for (int k=0; k<length; k++){
-                MPI_Recv(&overlapping_blocks_column[total].columns_length, 1, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
+                MPI_Probe(proc, 2002, MPI_COMM_WORLD, &status)
+                MPI_Get_count(&status, MPI_INT, &overlapping_blocks_column[total].columns_length)
                 overlapping_blocks_column[total].columns = malloc(sizeof(int) * overlapping_blocks_column[total].columns_length);
                 MPI_Recv(overlapping_blocks_column[total].columns, overlapping_blocks_column[total].columns_length, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
-                MPI_Recv(&overlapping_blocks_column[total].row_ids_length, 1, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
+                MPI_Probe(proc, 2002, MPI_COMM_WORLD, &status)
+                MPI_Get_count(&status, MPI_INT, &overlapping_blocks_column[total].row_ids_length)
                 overlapping_blocks_column[total].row_ids = malloc(sizeof(int) * overlapping_blocks_column[total].row_ids_length);
                 MPI_Recv(overlapping_blocks_column[total].row_ids, overlapping_blocks_column[total].row_ids_length, MPI_INT, proc, 2002, MPI_COMM_WORLD, &status);
                 total++;
@@ -145,9 +147,7 @@ int merge_overlapping_blocks(CollisionArray collisions, int proc_id, int num_pro
         MPI_Send(&counter, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
         for (int i=0; i<(work_division[1]-work_division[0]); i++){
             if (overlapping_blocks_column[i].columns_length != -1 && overlapping_blocks_column[i].row_ids_length != -1){
-                MPI_Send(&overlapping_blocks_column[i].columns_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
                 MPI_Send(overlapping_blocks_column[i].columns, overlapping_blocks_column[i].columns_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
-                MPI_Send(&overlapping_blocks_column[i].row_ids_length, 1, MPI_INT, 0, 2002, MPI_COMM_WORLD);
                 MPI_Send(overlapping_blocks_column[i].row_ids, overlapping_blocks_column[i].row_ids_length, MPI_INT, 0, 2002, MPI_COMM_WORLD);
                 // free memory
                 free(overlapping_blocks_column[i].row_ids);

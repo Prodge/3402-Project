@@ -119,7 +119,8 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
                 collisions[c_index].array = malloc(sizeof(Collision) * collisions[c_index].length);
                 for(int i=0; i<collisions[c_index].length; i++){
                     // Receive each collision
-                    MPI_Recv(&collisions[c_index].array[i].length, 1, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
+                    MPI_Probe(proc+1, 2001, MPI_COMM_WORLD, &status)
+                    MPI_Get_count(&status, MPI_INT, &collisions[c_index].array[i].length)
                     collisions[c_index].array[i].columns = malloc(sizeof(int) * collisions[c_index].array[i].length);
                     MPI_Recv(collisions[c_index].array[i].columns, collisions[c_index].array[i].length, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
                     MPI_Recv(&collisions[c_index].array[i].row_ids, 4, MPI_INT, proc+1, 2001, MPI_COMM_WORLD, &status);
@@ -174,7 +175,6 @@ CollisionArray get_collisions(BlockArray* column_blocks, int columns, int proc_i
             // Send through each collision individually
             MPI_Send(&collisions[thread].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
             for(int i=0; i< collisions[thread].length; i++){
-                MPI_Send(&collisions[thread].array[i].length, 1, MPI_INT, 0, 2001, MPI_COMM_WORLD);
                 MPI_Send(collisions[thread].array[i].columns,  collisions[thread].array[i].length, MPI_INT, 0, 2001, MPI_COMM_WORLD);
                 MPI_Send(&collisions[thread].array[i].row_ids, 4, MPI_INT, 0, 2001, MPI_COMM_WORLD);
                 MPI_Send(&collisions[thread].array[i].signature, 1, MPI_DOUBLE, 0, 2001, MPI_COMM_WORLD);
